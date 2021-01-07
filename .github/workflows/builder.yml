@@ -1,0 +1,62 @@
+name: 'Recovery Builder'
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore: 'README.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    env:
+      # Change these values in you are Forking the repo for own use
+      GitHubMail: "rokibhasansagar2014@outlook.com"
+      GitHubName: "rokibhasansagar"
+
+    steps:
+      # Set Git Configs
+      - name: Set Git Configs & Secrets
+        run: |
+          git config --global user.email ${GitHubMail}
+          git config --global user.name ${GitHubName}
+          git config --global credential.helper store
+          echo "https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com" > ~/.git-credentials
+      # Checkout this repository
+      - uses: actions/checkout@v2
+      # Cleanup The Workspace Using Custom Composite Run Actions
+      - uses: rokibhasansagar/slimhub_actions@main
+      # Initialize Build Environment
+      - uses: rokibhasansagar/build-env_actions@main
+      # Repo sync and Build Recovery/Boot Image
+      # It tries to output `output_dir` as environment variable for later use
+      - name: Recovery Builder
+        run: |
+          curl -sL https://github.com/rokibhasansagar/recovery-builder_actions/raw/main/build.sh | bash
+          # Exports for next steps
+          echo "project_dir=${project_dir}" >> $GITHUB_ENV
+          echo "vendor=${vendor}" >> $GITHUB_ENV
+          echo "codename=${codename}" >> $GITHUB_ENV
+          echo "OUTPUT_DIR=$(echo ${project_dir}/out/target/product/$codename)" >> $GITHUB_ENV
+        env:
+          # If you want to retain any of these variables for next steps, use them in jobs.env instead
+          project_dir: 'android'
+          manifest_url: 'https://github.com/OmniROM-Legacy/minimal_manifest_twrp_omni'
+          manifest_branch: 'twrp-6.0'
+          # EXCL_GRP: ''
+          dt_link: 'https://github.com/rokibhasansagar/android_device_twrp_WALTON_Primo_RX5'
+          dt_br: 'master'
+          vendor: 'WALTON'
+          codename: 'Primo_RX5'
+          # KERNEL_LINK: ''
+          # KERNEL_BR: ''
+          flavor: 'userdebug'
+          target: 'recoveryimage'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: my-builds
+          path: |
+            android/out/target/product/*/*.img
+            android/out/target/product/*/*.zip
+            ${OUTPUT_DIR}/*.img
