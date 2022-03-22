@@ -1,0 +1,70 @@
+name: Plain CI for PH4NTOM
+
+on:
+  workflow_dispatch:
+
+env:
+  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  # FTOOL_ARC_URL: ${{ secrets.FTOOL_ARC_URL }}
+  FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
+
+jobs:
+  shell2miraculous:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@main
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          git_name: "fr3akyphantom01"
+          git_email: "85096237+fr3akyphantom01@users.noreply.github.com"
+          credential: "yes"
+          git_cookies: "no"
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+      - name: Rclone and FF Setup
+        continue-on-error: true
+        run: |
+          cd "$(mktemp -d)"
+          wget -q "${FTOOL_ARC_URL2}" || curl -sL "${FTOOL_ARC_URL2}" -O
+          tar -xJf ff*.tar.xz --strip-components 1
+          rm -f bin/*play
+          sudo mv bin/* /usr/local/bin/
+          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          mkdir -p ~/.config/rclone
+          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          python3 -m pip install -U yt-dlp
+          cd -
+      - name: kanojo
+        run: |
+          rclone copy td:/GdriveXbot/kanojo_okarishimasu-1.zip .
+          mkdir -p kanojo_okarishimasu_raw
+          7z x *.zip -okanojo_okarishimasu_raw
+          cd kanojo_okarishimasu_raw
+          for i in *; do mv -v ${i} ${i#*-}; done
+          cd ..
+          rclone copy kanojo_okarishimasu_raw/ td:/kanojo_okarishimasu_raw/ --fast-list --update 
+      - name: NGROK Session
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Miraculous SSH Runner"
+      - name: Empty
+        continue-on-error: true
+        timeout-minutes: 95
+        run: |
+          until [[ "${TIME_LEFT:=90}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
