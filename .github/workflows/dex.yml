@@ -1,0 +1,61 @@
+name: Mangadex CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      MangadexURL:
+        description: "Mangadex URL"
+        required: true
+        type: string
+
+env:
+  MangadexURL: ${{ github.event.inputs.MangadexURL }}
+  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ImageQuality: ["HQ", "Compressed"]
+        SaveAs: ["tachiyomi", "tachiyomi-zip", "pdf", "cbz"]
+
+    env:
+      ImageQuality: ${{ matrix.ImageQuality }}
+      SaveAs: ${{ matrix.SaveAs }}
+
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Prepare tools
+        run: |
+          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          mkdir -p ~/.config/rclone
+          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          python3 -m pip install -U mangadex-downloader
+          if [[ ${SaveAs} == "pdf" ]]; then
+            python3 -m pip install -U Pillow
+          fi
+      - name: Image Quality Selector
+        run: |
+          if [[ ${ImageQuality} == "HQ" ]]; then
+            export ImgQOpts=""
+          elif [[ ${ImageQuality} == "Compressed" ]]; then
+            export ImgQOpts="--use-compressed-image"
+          fi
+          echo "ImgQOpts=${ImgQOpts}" >>$GITHUB_ENV
+      - name: Manga Downloader Task
+        run: |
+          mkdir -p mangadex && cd mangadex
+          mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} --save-as ${SaveAs}
+          cd ..
+      - name: Debug Detail Phase (Ignore)
+        run: |
+          tree -h -L 2 mangadex
+      - name: Manga Upload Task
+        run: |
+          printf "Total Size of the Upload will be %s\n" "$(du -bh mangadex)"
+          rclone copy mangadex/ td:/Mangadex_Uploads/${SaveAs}_${ImageQuality}/ -P && printf "Upload Done\n"
