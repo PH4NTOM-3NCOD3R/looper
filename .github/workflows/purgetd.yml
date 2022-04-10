@@ -1,0 +1,27 @@
+name: Purge TD Trash
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * SAT' # Runs at 00:00 UTC on Saturday
+
+env:
+  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Prepare Rclone
+        run: |
+          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          mkdir -p ~/.config/rclone
+          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+
+      - name: Cleanup TD Trash
+        run: |
+          rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list
