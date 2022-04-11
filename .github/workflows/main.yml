@@ -1,12 +1,7 @@
 
-name: CI
+name: Main CI
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
   workflow_dispatch:
 
 jobs:
@@ -14,15 +9,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: rokibhasansagar/slimhub_actions@main
-      - uses: rokibhasansagar/build-env_actions@main
-      - name: df
-        run: df -lT -t ext4
-      - name: Keepalive
-        timeout-minutes: 20
+      - uses: actions/checkout@v3
+      - name: Dummy
         run: |
-          while true; do
-            printf ".\n" && sleep 1200
-          done
-          git --version
+          printf "Hello World.\n"
