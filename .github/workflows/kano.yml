@@ -1,0 +1,40 @@
+name: KanoCI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ScriptURL:
+        description: "Script URL"
+        required: true
+        type: string
+
+env:
+  ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  PAT: ${{ secrets.GH_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+
+      - name: Prepare Rclone
+        run: |
+          curl -fsSL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          mkdir -p ~/.config/rclone
+          curl -fsSL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+
+      - name: Run Script
+        run: |
+          git config --global init.defaultbranch main
+          git config --global advice.detachedhead false
+          curl -fsSL "${ScriptURL}" | bash
