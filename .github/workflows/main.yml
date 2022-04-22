@@ -1,5 +1,5 @@
 
-name: Main CI
+name: Main cavif CI
 
 on:
   workflow_dispatch:
@@ -10,6 +10,70 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Dummy
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          git_cookies: "no"
+      - uses: actions/checkout@v3
+        with:
+          repository: 'link-u/cavif'
+          path: 'avif'
+          submodules: 'recursive'
+          fetch-depth: 0
+      - name: Install dependencies
+        shell: bash
         run: |
-          printf "Hello World.\n"
+          tree
+          cd avif
+          sudo apt install -qy --no-install-recommends \
+            gcc g++ yasm nasm python3-venv python3-pip python3-setuptools
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install wheel
+          pip3 install meson
+          pip3 install ninja
+      - name: configure
+        shell: bash
+        run: |
+          cd avif
+          source venv/bin/activate
+          bash scripts/reset-submodules.sh
+          bash scripts/apply-patches.sh
+          bash scripts/build-deps.sh
+          cmake -S . -B build -G Ninja
+      - name: Build
+        shell: bash
+        run: |
+          cd avif
+          source venv/bin/activate
+          env --chdir build ninja
+      - name: Compress and Upload
+        shell: bash
+        run: |
+          cd avif
+          upx -k -9 build/cavif
+          curl --upload-file build/cavif https://transfer.sh && echo
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+      - name: NGROK Session
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Empty SSH Runner"
+      - name: Empty
+        continue-on-error: true
+        timeout-minutes: 95
+        run: |
+          until [[ "${TIME_LEFT:=90}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
