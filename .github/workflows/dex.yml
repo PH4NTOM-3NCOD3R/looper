@@ -7,11 +7,10 @@ on:
         description: "Mangadex URL"
         required: true
         type: string
-
-env:
-  MangadexURL: ${{ github.event.inputs.MangadexURL }}
-  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
-  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+      ChapterRange:
+        description: "Dash-delimited Range of Chapters"
+        required: false
+        type: string
 
 jobs:
   build:
@@ -20,8 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ImageQuality: ["HQ", "Compressed"]
-        SaveAs: ["tachiyomi", "tachiyomi-zip", "pdf", "cbz"]
+        ImageQuality: ["High", "Compressed"]
+        SaveAs: ["tachiyomi", "pdf", "cbz"]
 
     env:
       ImageQuality: ${{ matrix.ImageQuality }}
@@ -31,6 +30,9 @@ jobs:
       - uses: actions/checkout@main
 
       - name: Prepare tools
+        env:
+          RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
           curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
@@ -39,23 +41,51 @@ jobs:
           if [[ ${SaveAs} == "pdf" ]]; then
             python3 -m pip install -U Pillow
           fi
-      - name: Image Quality Selector
+      - name: Manga Downloader Task
+        env:
+          MangadexURL: ${{ github.event.inputs.MangadexURL }}
+          ChapterRange: ${{ github.event.inputs.ChapterRange }}
         run: |
-          if [[ ${ImageQuality} == "HQ" ]]; then
+          mkdir -p mangadex && cd mangadex
+          if [[ ${ImageQuality} == "High" ]]; then
             export ImgQOpts=""
           elif [[ ${ImageQuality} == "Compressed" ]]; then
             export ImgQOpts="--use-compressed-image"
           fi
-          echo "ImgQOpts=${ImgQOpts}" >>$GITHUB_ENV
-      - name: Manga Downloader Task
-        run: |
-          mkdir -p mangadex && cd mangadex
-          mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} --save-as ${SaveAs}
+          echo "::group:: [+] Download Task"
+          if [[ ${ChapterRange} != "" ]]; then
+            export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
+          fi
+          mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --enable-legacy-sorting --unsafe
+          if [[ $? -ne 0 ]]; then
+            mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --replace --use-chapter-title --enable-legacy-sorting --unsafe
+          fi
           cd ..
+          echo "::endgroup::"
+          if [[ ${SaveAs} == "tachiyomi" ]]; then
+            echo "::group:: ∆ Compress Tachiyomi"
+            cd mangadex/$(ls mangadex/ | cut -d' ' -f1)*
+            export MangaName="${PWD##*/}"
+            echo "MangaName=${MangaName}" >>${GITHUB_ENV}
+            ls -lAog
+            for i in *; do
+              if [[ -d "${i}" ]]; then
+                pushd "${i}"
+                7z a -mmt2 -bb0 ../"${i}".7z * && sleep 1s
+                tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 1s
+                popd
+                rm -rf "${i}"
+              fi
+            done
+            echo "::endgroup::"
+          fi
       - name: Debug Detail Phase (Ignore)
         run: |
+          printf "Total Size of the Upload will be %s\n\n" "$(du -sh mangadex)"
+          printf "Contents of the Manga...\n\n"
           tree -h -L 2 mangadex
       - name: Manga Upload Task
         run: |
-          printf "Total Size of the Upload will be %s\n" "$(du -bh mangadex)"
-          rclone copy mangadex/ td:/Mangadex_Uploads/${SaveAs}_${ImageQuality}/ -P && printf "Upload Done\n"
+          printf "Please wait a few minutes till everything gets uploaded...\n"
+          rclone copy mangadex/ td:/MDx_UploadZ/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
+          echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/MDx_UploadZ/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
