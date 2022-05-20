@@ -1,4 +1,4 @@
-name: Main cavif CI
+name: Main cavif/davif CI
 
 on:
   workflow_dispatch:
@@ -18,42 +18,78 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: 'link-u/cavif'
-          path: 'avif'
+          path: 'cavif'
           submodules: 'recursive'
-          fetch-depth: 0
-      - name: Install dependencies
+          fetch-depth: 1
+      - uses: actions/checkout@v3
+        with:
+          repository: 'link-u/davif'
+          path: 'davif'
+          submodules: 'recursive'
+          fetch-depth: 1
+      - name: Install Common Dependencies
         shell: bash
         run: |
           tree -L 3
-          cd avif
           sudo apt install -qy --no-install-recommends \
             gcc g++ yasm nasm python3-venv python3-pip python3-setuptools
+      - name: configure & Build cavif
+        shell: bash
+        run: |
+          cd cavif
+          echo "::group:: Prepare"
+          git submodule update --remote
           python3 -m venv venv
           source venv/bin/activate
           pip3 install wheel
           pip3 install meson
           pip3 install ninja
-      - name: configure
-        shell: bash
-        run: |
-          cd avif
-          git submodule update --remote
-          source venv/bin/activate
+          echo "::endgroup::"
+          echo "::group:: Configure"
           bash scripts/reset-submodules.sh
           bash scripts/apply-patches.sh
           bash scripts/build-deps.sh
           cmake -S . -B build -G Ninja
-      - name: Build
-        shell: bash
-        run: |
-          cd avif
-          source venv/bin/activate
+          echo "::endgroup::"
+          echo "::group:: Build"
           env --chdir build ninja
-      - name: Compress and Upload
+          echo "::endgroup::"
+          ldd build/cavif || true
+      - name: configure & Build davif
         shell: bash
         run: |
-          cd avif
-          chmod a+x build/cavif && ./build/cavif -h
-          printf "\n\n"
-          upx -k -9 build/cavif
-          curl --upload-file build/cavif https://transfer.sh && echo
+          cd davif
+          echo "::group:: Prepare"
+          git submodule update --remote
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install wheel
+          pip3 install meson
+          pip3 install ninja
+          echo "::endgroup::"
+          echo "::group:: Configure"
+          bash scripts/reset-submodules.sh
+          bash scripts/apply-patches.sh
+          bash scripts/build-deps.sh
+          cmake -S . -B build -G Ninja
+          echo "::endgroup::"
+          echo "::group:: Build"
+          env --chdir build ninja
+          echo "::endgroup::"
+          ldd build/davif || true
+      - name: Program Documentation
+        shell: bash
+        run: |
+          for i in c d; do
+            chmod a+x ${i}avif/build/${i}avif
+            ./${i}avif/build/${i}avif -h 2>&1
+            printf "\n\n"
+          done
+      - name: Compress and Upload Binaries
+        shell: bash
+        run: |
+          for i in c d; do
+            upx -k -9 ${i}avif/build/${i}avif
+            curl --upload-file ${i}avif/build/${i}avif https://transfer.sh && echo
+            printf "\n\n"
+          done
