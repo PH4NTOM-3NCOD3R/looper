@@ -1,15 +1,16 @@
-name: KanoCI
+name: Script Runner CI
 
 on:
   workflow_dispatch:
     inputs:
       ScriptURL:
-        description: "Script URL"
+        description: "Script URL to Run"
         required: true
         type: string
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
   RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
   RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
   PAT: ${{ secrets.GH_TOKEN }}
@@ -27,11 +28,19 @@ jobs:
           credential: "yes"
           git_cookies: "no"
 
-      - name: Prepare Rclone
+      - name: Rclone and FF Setup
+        continue-on-error: true
         run: |
-          curl -fsSL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          cd "$(mktemp -d)"
+          wget -q "${FTOOL_ARC_URL2}" || curl -sL "${FTOOL_ARC_URL2}" -O
+          tar -xJf ff*.tar.xz --strip-components 1
+          rm -f bin/*play
+          sudo mv bin/* /usr/local/bin/
+          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
-          curl -fsSL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          python3 -m pip install -U yt-dlp
+          cd -
 
       - name: Run Script
         run: |
