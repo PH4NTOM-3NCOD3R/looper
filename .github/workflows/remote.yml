@@ -1,0 +1,93 @@
+name: Remote NGShell CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+
+      - name: Rclone and FF Setup
+        continue-on-error: true
+        env:
+          RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
+          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+          FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
+        run: |
+          cd "$(mktemp -d)"
+          wget -q "${FTOOL_ARC_URL2}" || curl -sL "${FTOOL_ARC_URL2}" -O
+          tar -xJf ff*.tar.xz --strip-components 1
+          rm -f bin/*play
+          sudo mv bin/* /usr/local/bin/
+          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
+          mkdir -p ~/.config/rclone
+          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          python3 -m pip install -U yt-dlp
+          cd -
+
+      - name: NGROK Session 1
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Remote NGShell 1"
+
+      - name: Empty 1
+        continue-on-error: true
+        timeout-minutes: 50
+        run: |
+          until [[ "${TIME_LEFT:=45}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
+
+      - name: Kill Session 1
+        continue-on-error: true
+        run: |
+          pkill -9 screen || sudo pkill -9 screen 2>/dev/null
+          pkill -9 ngrok || sudo pkill -9 ngrok 2>/dev/null
+
+      - name: NGROK Session 2
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Remote NGShell 2"
+
+      - name: Empty 2
+        continue-on-error: true
+        timeout-minutes: 50
+        run: |
+          until [[ "${TIME_LEFT:=45}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
