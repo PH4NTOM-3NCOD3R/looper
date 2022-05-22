@@ -7,9 +7,20 @@ on:
         description: "Script URL to Run"
         required: true
         type: string
+      SkipTools:
+        description: "Skip Tools Installation"
+        type: boolean
+        default: false
+        required: false
+      Debug:
+        description: "Debug Download"
+        type: boolean
+        default: false
+        required: false
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  Debug: ${{ github.event.inputs.Debug }}
   FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
   RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
   RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
@@ -29,6 +40,7 @@ jobs:
           git_cookies: "no"
 
       - name: Rclone and FF Setup
+        if: github.event.inputs.SkipTools != 'true'
         continue-on-error: true
         run: |
           cd "$(mktemp -d)"
