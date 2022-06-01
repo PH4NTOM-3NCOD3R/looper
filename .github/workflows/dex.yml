@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         ImageQuality: ["High", "Compressed"]
-        SaveAs: ["tachiyomi", "pdf", "cbz"]
+        SaveAs: ["tachiyomi", "pdf", "cb7"]
 
     env:
       ImageQuality: ${{ matrix.ImageQuality }}
@@ -40,6 +40,8 @@ jobs:
           python3 -m pip install -U mangadex-downloader
           if [[ ${SaveAs} == "pdf" ]]; then
             python3 -m pip install -U Pillow
+          elif [[ ${SaveAs} == "cb7" ]]; then
+            python3 -m pip install -U py7zr
           fi
       - name: Manga Downloader Task
         env:
@@ -56,9 +58,9 @@ jobs:
           if [[ ${ChapterRange} != "" ]]; then
             export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
           fi
-          mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --enable-legacy-sorting --unsafe
+          mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           if [[ $? -ne 0 ]]; then
-            mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --replace --use-chapter-title --enable-legacy-sorting --unsafe
+            mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --replace --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           fi
           cd ..
           echo "::endgroup::"
@@ -71,7 +73,6 @@ jobs:
             for i in *; do
               if [[ -d "${i}" ]]; then
                 pushd "${i}"
-                7z a -mmt2 -bb0 ../"${i}".7z * && sleep 1s
                 tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 1s
                 popd
                 rm -rf "${i}"
