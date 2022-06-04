@@ -47,39 +47,9 @@ jobs:
           SSH_PASSWORD: SECRET
           TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
-          REPO_PURPOSE: "Remote NGShell 1"
+          REPO_PURPOSE: "Remote NGShell"
 
-      - name: Empty 1
-        continue-on-error: true
-        timeout-minutes: 50
-        run: |
-          until [[ "${TIME_LEFT:=45}" = 0 ]]; do
-            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
-            sleep 1m
-            TIME_LEFT=$((TIME_LEFT - 1))
-          done
-          printf "You have 3 minutes 59 seconds left.\n"
-          sleep 4m
-          exit
-
-      - name: Kill Session 1
-        continue-on-error: true
-        run: |
-          pkill -9 screen || sudo pkill -9 screen 2>/dev/null
-          pkill -9 ngrok || sudo pkill -9 ngrok 2>/dev/null
-
-      - name: NGROK Session 2
-        continue-on-error: true
-        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
-        env:
-          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
-          NGROK_REGION: eu
-          SSH_PASSWORD: SECRET
-          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
-          REPO_PURPOSE: "Remote NGShell 2"
-
-      - name: Empty 2
+      - name: Empty
         continue-on-error: true
         timeout-minutes: 50
         run: |
