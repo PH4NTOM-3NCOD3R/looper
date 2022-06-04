@@ -21,8 +21,12 @@ jobs:
       matrix:
         ImageQuality: ["High", "Compressed"]
         SaveAs: ["tachiyomi", "pdf", "cb7"]
+        exclude:
+        - ImageQuality: "High"
+          SaveAs: "pdf"
 
     env:
+      MDx_Location: "MDx_Uploads"
       ImageQuality: ${{ matrix.ImageQuality }}
       SaveAs: ${{ matrix.SaveAs }}
 
@@ -48,11 +52,19 @@ jobs:
           MangadexURL: ${{ github.event.inputs.MangadexURL }}
           ChapterRange: ${{ github.event.inputs.ChapterRange }}
         run: |
+          MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
+          echo "MangaName=${MangaName}" >>${GITHUB_ENV}
           mkdir -p mangadex && cd mangadex
           if [[ ${ImageQuality} == "High" ]]; then
             export ImgQOpts=""
           elif [[ ${ImageQuality} == "Compressed" ]]; then
             export ImgQOpts="--use-compressed-image"
+          fi
+          if [[ ${SaveAs} == "tachiyomi" ]]; then
+            if ! rclone lsf "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt"; then
+              echo "This is a Dummy File" >/tmp/dummy.txt
+              rclone copyto /tmp/dummy.txt "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt"
+            fi
           fi
           echo "::group:: [+] Download Task"
           if [[ ${ChapterRange} != "" ]]; then
@@ -63,23 +75,23 @@ jobs:
             mangadex-dl "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --replace --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           fi
           cd ..
+          [[ ${SaveAs} == "tachiyomi" ]] && rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
           echo "::endgroup::"
-          if [[ ${SaveAs} == "tachiyomi" ]]; then
-            echo "::group:: ∆ Compress Tachiyomi"
-            cd mangadex/$(ls mangadex/ | cut -d' ' -f1)*
-            export MangaName="${PWD##*/}"
-            echo "MangaName=${MangaName}" >>${GITHUB_ENV}
-            ls -lAog
-            for i in *; do
-              if [[ -d "${i}" ]]; then
-                pushd "${i}"
-                tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 1s
-                popd
-                rm -rf "${i}"
-              fi
-            done
-            echo "::endgroup::"
-          fi
+      - name: Create tar.zstd Files from tachiyomi
+        if: env.SaveAs == 'tachiyomi'
+        run: |
+          echo "::group:: ∆ Compress Tachiyomi"
+          cd mangadex/"${MangaName}"
+          ls -lAog
+          for i in *; do
+            if [[ -d "${i}" ]]; then
+              pushd "${i}"
+              tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 1s
+              popd
+              rm -rf "${i}"
+            fi
+          done
+          echo "::endgroup::"
       - name: Debug Detail Phase (Ignore)
         run: |
           printf "Total Size of the Upload will be %s\n\n" "$(du -sh mangadex)"
@@ -88,5 +100,5 @@ jobs:
       - name: Manga Upload Task
         run: |
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone copy mangadex/ td:/MDx_UploadZ/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
-          echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/MDx_UploadZ/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
+          rclone copy mangadex/ td:/${MDx_Location}/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
+          echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
