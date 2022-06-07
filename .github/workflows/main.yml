@@ -85,11 +85,17 @@ jobs:
             ./${i}avif/build/${i}avif -h 2>&1
             printf "\n\n"
           done
-      - name: Compress and Upload Binaries
+      - name: Compress Binaries with UPX
         shell: bash
         run: |
           for i in c d; do
-            upx -k -9 ${i}avif/build/${i}avif
-            curl --upload-file ${i}avif/build/${i}avif https://transfer.sh && echo
-            printf "\n\n"
+            upx -9 ${i}avif/build/${i}avif
           done
+      - name: Upload as Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: avif_tools
+          path: |
+            cavif/build/cavif
+            davif/build/davif
+          retention-days: 8
