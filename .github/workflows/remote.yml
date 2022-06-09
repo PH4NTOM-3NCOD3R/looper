@@ -3,6 +3,10 @@ name: Remote NGShell CI
 on:
   workflow_dispatch:
 
+env:
+  SOURCERY: ${{ secrets.SOURCERY }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+
 jobs:
   shell:
     runs-on: ubuntu-latest
@@ -20,25 +24,7 @@ jobs:
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
-      - name: Rclone and FF Setup
-        continue-on-error: true
-        env:
-          RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
-          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
-          FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
-        run: |
-          cd "$(mktemp -d)"
-          wget -q "${FTOOL_ARC_URL2}" || curl -sL "${FTOOL_ARC_URL2}" -O
-          tar -xJf ff*.tar.xz --strip-components 1
-          rm -f bin/*play
-          sudo mv bin/* /usr/local/bin/
-          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
-          mkdir -p ~/.config/rclone
-          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
-          python3 -m pip install -U yt-dlp
-          cd -
-
-      - name: NGROK Session 1
+      - name: NGROK Session
         continue-on-error: true
         run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
         env:
@@ -51,9 +37,9 @@ jobs:
 
       - name: Empty
         continue-on-error: true
-        timeout-minutes: 50
+        timeout-minutes: 45
         run: |
-          until [[ "${TIME_LEFT:=45}" = 0 ]]; do
+          until [[ "${TIME_LEFT:=40}" = 0 ]]; do
             printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
             sleep 1m
             TIME_LEFT=$((TIME_LEFT - 1))
