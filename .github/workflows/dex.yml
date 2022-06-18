@@ -59,9 +59,8 @@ jobs:
           RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
           RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
-          if [[ ${SaveAs} != 'tachiyomi' ]]; then
-            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
-          fi
+          [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
+          [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
           curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
           curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
@@ -76,11 +75,10 @@ jobs:
           MangadexURL: ${{ github.event.inputs.MangadexURL }}
           ChapterRange: ${{ github.event.inputs.ChapterRange }}
         run: |
-          if [[ ${SaveAs} != 'tachiyomi' ]]; then
-            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
-          fi
+          [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
+          [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
-          export MangaName=$(sed 's/.$//g' ${MangaName})
+          export MangaName=$(sed 's/\.$//g' <<<${MangaName})
           echo "MangaName=${MangaName}" >>${GITHUB_ENV}
           mkdir -p mangadex && cd mangadex
           if [[ ${ImageQuality} == "High" ]]; then
@@ -120,19 +118,17 @@ jobs:
             fi
           done
           echo "::endgroup::"
-      - name: Debug Detail Phase (Ignore)
+      - name: Upload Task
         run: |
-          if [[ ${SaveAs} != 'tachiyomi' ]]; then
-            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
-          fi
+          [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
+          [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
+          echo "::group:: [i] Debug Details"
           printf "Total Size of the Upload will be %s\n\n" "$(du -sh mangadex)"
           printf "Contents of the Manga...\n\n"
           tree -h -L 2 mangadex
-      - name: Manga Upload Task
-        run: |
-          if [[ ${SaveAs} != 'tachiyomi' ]]; then
-            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
-          fi
+          echo "::endgroup::"
+          echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
           rclone copy mangadex/ td:/${MDx_Location}/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
           echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
+          echo "::endgroup::"
