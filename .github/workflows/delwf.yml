@@ -3,13 +3,9 @@ name: Clean Workflow Logs
 on:
   workflow_dispatch:
     inputs:
-      RepoSlug:
-        description: "RepoSlug"
-        required: true
-        type: string
       days_old:
         description: "The amount of days old to delete"
-        default: "5"
+        default: "3"
         required: false
 
 jobs:
@@ -20,5 +16,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.inputs.RepoSlug }}    # ${{ github.event.repository.name }}
+          repo: ${{ github.event.repository.name }}
           days_old: ${{ github.event.inputs.days_old }}
