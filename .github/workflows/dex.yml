@@ -11,6 +11,21 @@ on:
         description: "Dash-delimited Range of Chapters"
         required: false
         type: string
+      GenComp:
+        description: "Generate Compressed Tachiyomi"
+        required: true
+        type: boolean
+        default: true
+      GenPDF:
+        description: "Generate PDF"
+        required: false
+        type: boolean
+        default: false
+      GenCB7:
+        description: "Generate CB7"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -19,16 +34,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ImageQuality: ["High", "Compressed"]
-        SaveAs: ["tachiyomi", "pdf", "cb7"]
-        exclude:
+        include:
         - ImageQuality: "High"
+          SaveAs: "tachiyomi"
+        - ImageQuality: "Compressed"
+          SaveAs: "tachiyomi"
+        - ImageQuality: "Compressed"
           SaveAs: "pdf"
+        - ImageQuality: "Compressed"
+          SaveAs: "cb7"
 
     env:
       MDx_Location: "MDx_Uploads"
       ImageQuality: ${{ matrix.ImageQuality }}
       SaveAs: ${{ matrix.SaveAs }}
+      GenPDF: ${{ github.event.inputs.GenPDF }}
+      GenCB7: ${{ github.event.inputs.GenCB7 }}
 
     steps:
       - uses: actions/checkout@main
@@ -38,6 +59,9 @@ jobs:
           RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
           RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
+          if [[ ${SaveAs} != 'tachiyomi' ]]; then
+            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
+          fi
           curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
           curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
@@ -52,7 +76,11 @@ jobs:
           MangadexURL: ${{ github.event.inputs.MangadexURL }}
           ChapterRange: ${{ github.event.inputs.ChapterRange }}
         run: |
+          if [[ ${SaveAs} != 'tachiyomi' ]]; then
+            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
+          fi
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
+          export MangaName=$(sed 's/.$//g' ${MangaName})
           echo "MangaName=${MangaName}" >>${GITHUB_ENV}
           mkdir -p mangadex && cd mangadex
           if [[ ${ImageQuality} == "High" ]]; then
@@ -94,11 +122,17 @@ jobs:
           echo "::endgroup::"
       - name: Debug Detail Phase (Ignore)
         run: |
+          if [[ ${SaveAs} != 'tachiyomi' ]]; then
+            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
+          fi
           printf "Total Size of the Upload will be %s\n\n" "$(du -sh mangadex)"
           printf "Contents of the Manga...\n\n"
           tree -h -L 2 mangadex
       - name: Manga Upload Task
         run: |
+          if [[ ${SaveAs} != 'tachiyomi' ]]; then
+            [[ ${GenPDF} == false || ${GenCB7} == false ]] && exit 0
+          fi
           printf "Please wait a few minutes till everything gets uploaded...\n"
           rclone copy mangadex/ td:/${MDx_Location}/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
           echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
