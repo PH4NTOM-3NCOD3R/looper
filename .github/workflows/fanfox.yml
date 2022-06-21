@@ -40,7 +40,7 @@ jobs:
           manga-py --max-threads 8 --global-progress --show-chapter-info --wait-after-chapter 1 --flare-solver-url "https://flaresolverr.herokuapp.com" --rename-pages --not-change-files-extension --save-manga-info "${FANFOX_URL}"
           echo "::endgroup::"
           echo "::group:: Details"
-          ls -lAog
+          ls -lAog Manga/*
           echo "::endgroup::"
 
       - name: NGROK Session
