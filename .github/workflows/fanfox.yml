@@ -32,9 +32,16 @@ jobs:
 
       - name: Fanfox DL
         run: |
+          echo "::group:: Setup"
           python3 -m pip install -U pip Pillow lxml
           python3 -m pip install -U manga-py
-          manga-py --max-threads 4 --no-progress --show-chapter-info --wait-after-chapter 1 --flare-solver-url "https://flaresolverr.herokuapp.com" --rename-pages --not-change-files-extension --save-manga-info "${FANFOX_URL}"
+          echo "::endgroup::"
+          echo "::group:: Download"
+          manga-py --max-threads 8 --global-progress --show-chapter-info --wait-after-chapter 1 --flare-solver-url "https://flaresolverr.herokuapp.com" --rename-pages --not-change-files-extension --save-manga-info "${FANFOX_URL}"
+          echo "::endgroup::"
+          echo "::group:: Details"
+          ls -lAog
+          echo "::endgroup::"
 
       - name: NGROK Session
         continue-on-error: true
