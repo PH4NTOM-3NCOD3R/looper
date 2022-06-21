@@ -33,7 +33,7 @@ jobs:
       - name: Fanfox DL
         run: |
           python3 -m pip install -U pip Pillow lxml
-          python3 -m pip install -U git+https://github.com/manga-py/manga-py@stable_1.x
+          python3 -m pip install -U manga-py
           python3 -m manga-py --max-threads 4 --wait-after-chapter 1 --flare-solver-url "https://flaresolverr.herokuapp.com" --rename-pages --not-change-files-extension "${FANFOX_URL}"
 
       - name: NGROK Session
