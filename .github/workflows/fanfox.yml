@@ -1,0 +1,61 @@
+name: Fanfox/Mangafox NGShell CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      FANFOX_URL:
+        description: FANFOX_URL
+        type: string
+        required: true
+
+env:
+  SOURCERY: ${{ secrets.SOURCERY }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  FANFOX_URL: ${{ github.event.inputs.FANFOX_URL }}
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+
+      - name: Fanfox DL
+        run: |
+          python3 -m pip install -U pip Pillow lxml
+          python3 -m pip install -U git+https://github.com/manga-py/manga-py@stable_1.x
+          python3 -m manga-py --max-threads 4 --wait-after-chapter 1 --flare-solver-url "https://flaresolverr.herokuapp.com" --rename-pages --not-change-files-extension "${FANFOX_URL}"
+
+      - name: NGROK Session
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Fanfox NGShell"
+
+      - name: Empty
+        continue-on-error: true
+        timeout-minutes: 40
+        run: |
+          until [[ "${TIME_LEFT:=35}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
