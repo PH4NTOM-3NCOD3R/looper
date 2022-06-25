@@ -48,16 +48,15 @@ jobs:
           echo "::endgroup::"
 
       - name: Main Av1an Worker
+        continue-on-error: true
         run: |
           shopt -s expand_aliases
           alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:latest"
           echo "::group:: Main Worker"
-          mkdir -p data && cd data
-          export FILENAME=${FILEURL##*/}
-          curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o "${FILENAME}"
-          mediainfo "${FILENAME}"
+          curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
+          mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an -i "${FILENAME}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=6 --end-usage=q --cq-level=34 --threads=1 ' --workers 2 --passes 2 --keep --logging enclog --ffmpeg ' -g 96 -keyint_min 24 -vf scale=-2:360 ' --pix-format yuv420p10le --split-method none --extra-split 96 --target-quality 80 --vmaf --probes 7 --probing-rate 2
+          av1an -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=6 --end-usage=q --cq-level=34 --threads=1 ' --workers 2 --passes 2 --keep --logging enclog --ffmpeg ' -g 96 -keyint_min 24 -vf scale=-2:360 ' --pix-format yuv420p10le --split-method none --extra-split 96 --target-quality 80 --vmaf --probes 7 --probing-rate 2
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
