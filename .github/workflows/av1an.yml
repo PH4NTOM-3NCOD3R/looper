@@ -33,9 +33,13 @@ jobs:
       - name: Av1an Worker
         run: |
           echo "::group:: Prepare"
-          sudo apt-fast update -qy && sudo apt-fast upgrade -qy
-          docker rmi -f $(docker images -q)
-          docker pull masterofzen/av1an:latest
+          sudo apt-fast update -qqy && sudo apt-fast upgrade -qqy
+          printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
+          docker rmi -f $(docker images -q) &>/dev/null
+          printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
+          docker pull -q masterofzen/av1an:latest
+          printf "\n[i] Av1an Docker Image Download Complete.\n\n"
+          shopt -s expand_aliases
           alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -it masterofzen/av1an:latest"
           av1an --help
           echo "::endgroup::"
