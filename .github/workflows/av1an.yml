@@ -53,6 +53,7 @@ jobs:
           alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:latest"
           echo "::group:: Main Worker"
           mkdir -p data && cd data
+          export FILENAME=${FILEURL##*/}
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o "${FILENAME}"
           mediainfo "${FILENAME}"
           printf "\n[i] Starting Av1an Worker...\n\n"
