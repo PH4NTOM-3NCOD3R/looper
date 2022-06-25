@@ -56,7 +56,7 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=6 --end-usage=cq --cq-level=32 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=1 ' --workers 2 --passes 2 --keep --logging enclog --ffmpeg ' -g 96 -keyint_min 24 -vf scale=-2:360 ' --pix-format yuv420p10le --split-method none --extra-split 96 --target-quality 80 --vmaf --probes 7 --probing-rate 2
+          av1an --verbose -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=6 --end-usage=cq --cq-level=32 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=1 ' --workers 2 --passes 2 --keep --logging enclog --ffmpeg ' -g 96 -keyint_min 24 -vf scale=-2:360 ' --pix-format yuv420p10le --split-method none --extra-split 96 --target-quality 80 --vmaf --probes 5 --probing-rate 2
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
