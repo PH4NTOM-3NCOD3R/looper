@@ -1,0 +1,76 @@
+name: Av1an Remote NGShell
+
+on:
+  workflow_dispatch:
+    inputs:
+      FILEURL:
+        description: FILEURL
+        required: true
+        type: string
+
+env:
+  SOURCERY: ${{ secrets.SOURCERY }}
+  FILEURL: ${{  github.event.inputs.FILEURL }}
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+
+      - name: Av1an Worker
+        run: |
+          echo "::group:: Prepare"
+          sudo apt-fast update -qy && sudo apt-fast upgrade -qy
+          docker rmi -f $(docker images -q)
+          docker pull masterofzen/av1an:latest
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -it masterofzen/av1an:latest"
+          av1an --help
+          echo "::endgroup::"
+          echo "::group:: Main Worker"
+          mkdir -p data && cd data
+          curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o "${FILENAME}"
+          mediainfo "${FILENAME}"
+          printf "\n[i] Starting Av1an Worker...\n\n"
+          av1an -i "${FILENAME}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=6 --end-usage=q --cq-level=34 --threads=1 ' --workers 2 --passes 2 --keep --logging enclog --ffmpeg ' -g 96 -keyint_min 24 -vf scale=-2:360 ' --pix-format yuv420p10le --split-method none --extra-split 96 --target-quality 80 --vmaf --probes 7 --probing-rate 2
+          echo "::endgroup::"
+          echo "::group:: Upload Result"
+          mediainfo aom_encoded.mkv
+          curl --upload-file aom_encoded.mkv https://transfer.sh/ && echo
+          echo "::endgroup::"
+
+      - name: NGROK Session
+        continue-on-error: true
+        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        env:
+          NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          NGROK_REGION: eu
+          SSH_PASSWORD: SECRET
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
+          REPO_PURPOSE: "Av1an NGShell"
+
+      - name: Empty
+        continue-on-error: true
+        timeout-minutes: 45
+        run: |
+          until [[ "${TIME_LEFT:=40}" = 0 ]]; do
+            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+            sleep 1m
+            TIME_LEFT=$((TIME_LEFT - 1))
+          done
+          printf "You have 3 minutes 59 seconds left.\n"
+          sleep 4m
+          exit
