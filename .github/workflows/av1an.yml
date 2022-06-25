@@ -30,7 +30,8 @@ jobs:
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
-      - name: Av1an Worker
+
+      - name: Prepare Av1an Worker
         run: |
           echo "::group:: Prepare"
           sudo apt-fast update -qqy && sudo apt-fast upgrade -qqy
@@ -39,10 +40,17 @@ jobs:
           printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
           docker pull -q masterofzen/av1an:latest
           printf "\n[i] Av1an Docker Image Download Complete.\n\n"
+          echo "::endgroup::"
+          echo "::group:: Documentation"
           shopt -s expand_aliases
-          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -it masterofzen/av1an:latest"
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:latest"
           av1an --help
           echo "::endgroup::"
+
+      - name: Main Av1an Worker
+        run: |
+          shopt -s expand_aliases
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:latest"
           echo "::group:: Main Worker"
           mkdir -p data && cd data
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o "${FILENAME}"
