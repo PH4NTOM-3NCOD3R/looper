@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
         run: |
           shopt -s expand_aliases
-          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:latest"
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:sha-36fbff1"
           echo "::group:: Main Worker"
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
