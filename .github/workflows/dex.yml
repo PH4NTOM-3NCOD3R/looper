@@ -107,7 +107,7 @@ jobs:
         if: env.SaveAs == 'tachiyomi'
         run: |
           echo "::group:: ∆ Compress Tachiyomi"
-          cd mangadex/"${MangaName}"
+          cd mangadex/"${MangaName}" || cd mangadex/${MangaName%% *}*
           ls -lAog
           for i in *; do
             if [[ -d "${i}" ]]; then
