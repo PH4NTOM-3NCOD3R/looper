@@ -78,7 +78,7 @@ jobs:
           [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
           [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
-          export MangaName=$(sed 's/\.$//g' <<<${MangaName})
+          export MangaName=$(sed 's/[!?.]$//g' <<<${MangaName})
           echo "MangaName=${MangaName}" >>${GITHUB_ENV}
           mkdir -p mangadex && cd mangadex
           if [[ ${ImageQuality} == "High" ]]; then
