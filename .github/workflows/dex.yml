@@ -68,7 +68,7 @@ jobs:
           cd mangadex-downloader
           sudo -EH python3 setup.py install
           cd ..
-          rm -rf mangadex-downloader
+          sudo rm -rf mangadex-downloader
           if [[ ${SaveAs} == "pdf" ]]; then
             python3 -m pip install -U Pillow
           elif [[ ${SaveAs} == "cb7" ]]; then
