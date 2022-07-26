@@ -64,7 +64,11 @@ jobs:
           curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
           curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
-          python3 -m pip install -U mangadex-downloader
+          git clone -q --filter=blob:none https://github.com/mansuf/mangadex-downloader.git -b v1.1.0
+          cd mangadex-downloader
+          sudo -EH python3 setup.py install
+          cd ..
+          rm -rf mangadex-downloader
           if [[ ${SaveAs} == "pdf" ]]; then
             python3 -m pip install -U Pillow
           elif [[ ${SaveAs} == "cb7" ]]; then
@@ -96,9 +100,9 @@ jobs:
           if [[ ${ChapterRange} != "" ]]; then
             export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
           fi
-          python3 -m mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
+          mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           if [[ $? -ne 0 ]]; then
-            python3 -m mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
+            mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
           fi
           cd ..
           [[ ${SaveAs} == "tachiyomi" ]] && rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
