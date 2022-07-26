@@ -100,9 +100,9 @@ jobs:
           if [[ ${ChapterRange} != "" ]]; then
             export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
           fi
-          mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
+          mangadex-downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           if [[ $? -ne 0 ]]; then
-            mangadex_downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
+            mangadex-downloader "${MangadexURL}" --verbose --folder "${MangaName}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
           fi
           cd ..
           [[ ${SaveAs} == "tachiyomi" ]] && rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
