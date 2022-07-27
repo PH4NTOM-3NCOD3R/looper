@@ -132,6 +132,7 @@ jobs:
 
           cd mangadex
           mv "${MangaName%% *}"* "${MangaName}" 2>/dev/null || true
+          rm "${MangaName}"/details.json 2>/dev/null || true
 
           echo "::group:: [i] Debug Details"
           printf "Total Size of the Upload will be %s\n\n" "$(du -sh *)"
