@@ -61,6 +61,7 @@ jobs:
         run: |
           [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
           [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
+
           curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
           mkdir -p ~/.config/rclone
           curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
@@ -81,14 +82,18 @@ jobs:
         run: |
           [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
           [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
+
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
           export MangaName=$(sed 's/[!?.]$//g;s/[!?.]$//g' <<<${MangaName})
           echo "MangaName=${MangaName}" >>${GITHUB_ENV}
-          mkdir -p mangadex && cd mangadex
+
           if [[ ${ImageQuality} == "High" ]]; then
             export ImgQOpts=""
           elif [[ ${ImageQuality} == "Compressed" ]]; then
             export ImgQOpts="--use-compressed-image"
+          fi
+          if [[ ${ChapterRange} != "" ]]; then
+            export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
           fi
           if [[ ${SaveAs} == "tachiyomi" ]]; then
             if ! rclone lsf "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt"; then
@@ -96,22 +101,20 @@ jobs:
               rclone copyto /tmp/dummy.txt "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt"
             fi
           fi
+
           echo "::group:: [+] Download Task"
-          if [[ ${ChapterRange} != "" ]]; then
-            export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
-          fi
-          mangadex-downloader "${MangadexURL}" --verbose --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
+          mkdir -p mangadex && cd mangadex
+          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe
           if [[ $? -ne 0 ]]; then
-            mangadex-downloader "${MangadexURL}" --verbose --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
+            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts} --save-as ${SaveAs} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
           fi
-          cd ..
           [[ ${SaveAs} == "tachiyomi" ]] && rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
           echo "::endgroup::"
       - name: Create tar.zstd Files from tachiyomi
         if: env.SaveAs == 'tachiyomi'
         run: |
           echo "::group:: ∆ Compress Tachiyomi"
-          cd mangadex/"${MangaName}" || cd mangadex/${MangaName%% *}*
+          cd mangadex/"${MangaName}" 2>/dev/null || cd mangadex/${MangaName%% *}*
           ls -lAog
           for i in *; do
             if [[ -d "${i}" ]]; then
@@ -126,13 +129,18 @@ jobs:
         run: |
           [[ ${SaveAs} == 'pdf' && ${GenPDF} == 'false' ]] && exit 0
           [[ ${SaveAs} == 'cb7' && ${GenCB7} == 'false' ]] && exit 0
+
+          cd mangadex
+          mv "${MangaName%% *}"* "${MangaName}" 2>/dev/null || true
+
           echo "::group:: [i] Debug Details"
-          printf "Total Size of the Upload will be %s\n\n" "$(du -sh mangadex)"
+          printf "Total Size of the Upload will be %s\n\n" "$(du -sh *)"
           printf "Contents of the Manga...\n\n"
-          tree -h -L 2 mangadex
+          tree -h -L 2
           echo "::endgroup::"
+
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone copy mangadex/ td:/${MDx_Location}/${ImageQuality}_Quality/ --transfers 8 --fast-list && printf "Upload Done\n"
+          rclone copy "${MangaName}"/ "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}"/ --transfers 8 --fast-list && printf "Upload Done\n"
           echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
           echo "::endgroup::"
