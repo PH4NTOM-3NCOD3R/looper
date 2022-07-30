@@ -2,10 +2,23 @@ name: Remote NGShell CI
 
 on:
   workflow_dispatch:
+    inputs:
+      NgrokRegion:
+        description: "Ngrok Region"
+        required: true
+        default: "eu"
+        type: choice
+        options:
+        - us
+        - eu
+        - au
+        - ap
+        - sa
+        - jp
+        - in
 
 env:
   SOURCERY: ${{ secrets.SOURCERY }}
-  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
 
 jobs:
   shell:
@@ -26,10 +39,10 @@ jobs:
 
       - name: NGROK Session
         continue-on-error: true
-        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        run: curl -sL https://is.gd/ngrok3actions4fr3aky | bash
         env:
           NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
-          NGROK_REGION: eu
+          NGROK_REGION: ${{ github.event.inputs.NgrokRegion }}
           SSH_PASSWORD: SECRET
           TELEGRAM_BOT_TOKEN: ${{ secrets.NGBOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.NGBOT_CHAT }}
