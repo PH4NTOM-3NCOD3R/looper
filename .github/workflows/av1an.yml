@@ -12,6 +12,7 @@ env:
   SOURCERY: ${{ secrets.SOURCERY }}
   FILEURL: ${{  github.event.inputs.FILEURL }}
   RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  av1anTag: "sha-3e32699"
 
 jobs:
   shell:
@@ -30,7 +31,6 @@ jobs:
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
-
       - name: Prepare Av1an Worker
         run: |
           echo "::group:: Prepare"
@@ -38,13 +38,13 @@ jobs:
           printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
           docker rmi -f $(docker images -q) &>/dev/null
           printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
-          # docker pull -q masterofzen/av1an:latest
-          docker pull -q masterofzen/av1an:sha-36fbff1
+          # Pull tagged commit instead of master
+          docker pull -q masterofzen/av1an:${av1anTag}
           printf "\n[i] Av1an Docker Image Download Complete.\n\n"
           echo "::endgroup::"
           echo "::group:: Documentation"
           shopt -s expand_aliases
-          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:sha-36fbff1"
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:${av1anTag}"
           av1an --help
           echo "::endgroup::"
 
@@ -52,12 +52,12 @@ jobs:
         continue-on-error: true
         run: |
           shopt -s expand_aliases
-          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:sha-36fbff1"
+          alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:${av1anTag}"
           echo "::group:: Main Worker"
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=5 --end-usage=cq --cq-level=32 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=1 ' --workers 2 --passes 2 --ffmpeg ' -g 72 -keyint_min 24 -vf scale=-2:360 ' --max-tries 3 --pix-format yuv420p10le --split-method none --extra-split 72 --target-quality 80 --vmaf --probes 5 --probing-rate 2 --probe-slow
+          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --cpu-used=5 --end-usage=cq --cq-level=32 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=1 ' --workers 2 --passes 2 --ffmpeg ' -g 72 -keyint_min 24 -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method none --extra-split 72 --target-quality 83 --vmaf --probes 5 --probing-rate 2 --probe-slow
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
