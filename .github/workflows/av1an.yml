@@ -64,7 +64,7 @@ jobs:
           curl --upload-file aom_encoded.mkv https://transfer.sh/ && echo
           echo "::endgroup::"
           echo "::group:: Tree Walk Directory"
-          tree -a -h
+          tree -a -h -I ".git*"
           echo "::endgroup::"
 
       - name: NGROK Session
