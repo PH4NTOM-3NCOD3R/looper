@@ -63,6 +63,9 @@ jobs:
           mediainfo aom_encoded.mkv
           curl --upload-file aom_encoded.mkv https://transfer.sh/ && echo
           echo "::endgroup::"
+          echo "::group:: Tree Walk Directory"
+          tree -a -h
+          echo "::endgroup::"
 
       - name: NGROK Session
         continue-on-error: true
