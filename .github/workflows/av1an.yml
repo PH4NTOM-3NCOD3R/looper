@@ -34,7 +34,6 @@ jobs:
       - name: Prepare Av1an Worker
         run: |
           echo "::group:: Prepare"
-          sudo apt-fast update -qqy && sudo apt-fast upgrade -qqy
           printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
           docker rmi -f $(docker images -q) &>/dev/null
           printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
@@ -57,7 +56,7 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=6 --end-usage=cq --cq-level=30 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=2 ' --workers 2 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:360 ' --max-tries 3 --pix-format yuv420p --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 48 --target-quality 78 --vmaf --probes 5 --probing-rate 2 --probe-slow
+          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=6 --end-usage=cq --cq-level=30 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=2 ' --workers 2 --passes 1 --ffmpeg ' -g 120 -vf scale=-2:360 ' --max-tries 2 --pix-format yuv420p --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 48 --target-quality 70 --vmaf --probes 4 --probing-rate 1 --probe-slow
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
