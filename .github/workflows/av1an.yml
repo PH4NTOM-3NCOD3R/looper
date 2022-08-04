@@ -56,7 +56,7 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=6 --end-usage=cq --cq-level=30 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=2 ' --workers 2 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 48 --chunk-method hybrid --target-quality 80 --vmaf --probes 6 --probing-rate 2 --probe-slow --sc-only --scenes scenes.json || true
+          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=6 --end-usage=cq --cq-level=30 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=2 ' --workers 2 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 120 --chunk-method hybrid --target-quality 85 --vmaf --probes 6 --probing-rate 2 --probe-slow --sc-only --scenes scenes.json || true
           exit 0
           echo "::endgroup::"
           echo "::group:: Upload Result"
