@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       MangadexURL:
-        description: "Mangadex URL"
+        description: "Mangadex Full URL"
         required: true
         type: string
       ChapterRange:
-        description: "Dash-delimited Range of Chapters"
+        description: "Range of Chapters"
         required: false
         type: string
       GenRaw:
-        description: "Generate Raw (default)"
+        description: "Generate Raw (optimum)"
         required: false
         type: boolean
         default: false
@@ -56,13 +56,15 @@ env:
 jobs:
   prepare:
     name: Prepare Dex Matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     outputs:
       MangaName: ${{ steps.set-params.outputs.MangaName }}
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
       - name: Create EncMatrix
         id: set-params
         run: |
@@ -98,7 +100,7 @@ jobs:
 
   dexloader:
     name: Mangadex Downloader
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: prepare
 
     strategy:
@@ -110,7 +112,9 @@ jobs:
       compressed: ${{ matrix.compressed }}
 
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
       - name: Prepare tools
         env:
           RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
@@ -121,18 +125,14 @@ jobs:
           mkdir -p ~/.config/rclone
           curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
           # Prepare Downloader
-          python3 -m pip install -U Pillow py7zr
           cd `mktemp -d`
           wget -q "https://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip"
           unzip -q -j freefont-ttf-20120503.zip
           sudo mkdir -p /usr/share/fonts/truetype/freefont/ && sudo mv *.ttf /usr/share/fonts/truetype/freefont/
           cd - &>/dev/null
           fc-cache -r &>/dev/null
-          git clone -q --filter=blob:none https://github.com/mansuf/mangadex-downloader.git -b v1.1.0
-          cd mangadex-downloader
-          sudo -EH python3 setup.py install
-          cd ..
-          sudo rm -rf mangadex-downloader
+          python3 -m pip install -U pip
+          python3 -m pip install mangadex-downloader[optional]
       - name: Manga Downloader Task
         run: |
           # Prepare Vars
@@ -153,9 +153,9 @@ jobs:
           fi
           echo "::group:: [+] Download Task"
           mkdir -p mangadex && cd mangadex
-          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe || {
+          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name || {
             sleep 5s
-            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --enable-legacy-sorting --unsafe --replace
+            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --replace
           }
           echo "::endgroup::"
           if [[ ${format} == "raw"* ]]; then
@@ -181,7 +181,7 @@ jobs:
           echo "::group:: [i] Debug Details"
           printf "Total Size of the Upload will be %s\n\n" "$(du -sh * | awk '{print $1}')"
           printf "Contents of the Manga...\n\n"
-          tree -h -L 2
+          tree -h -L 2 mangadex/
           echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
