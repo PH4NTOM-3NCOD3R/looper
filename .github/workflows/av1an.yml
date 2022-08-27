@@ -7,19 +7,33 @@ on:
         description: FILEURL
         required: true
         type: string
+      ChunkMethod:
+        description: Chunk Method
+        required: true
+        default: lsmash
+        type: choice
+        options:
+        - lsmash
+        - ffms2
+        - hybrid
+        - select
+        - segment
 
 env:
   SOURCERY: ${{ secrets.SOURCERY }}
   FILEURL: ${{  github.event.inputs.FILEURL }}
+  ChunkMethod: ${{ github.event.inputs.ChunkMethod }}
   RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
-  av1anTag: "sha-3e32699"
+  av1anTag: "master" # "sha-3e32699"
 
 jobs:
   shell:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: "main"
 
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
@@ -34,6 +48,7 @@ jobs:
       - name: Prepare Av1an Worker
         run: |
           echo "::group:: Prepare"
+          git clone --filter=blob:none --depth=1 https://github.com/ZeoRexDevs/EncToolZ ~/EncToolZ && rm -rf ~/EncToolZ/.git
           printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
           docker rmi -f $(docker images -q) &>/dev/null
           printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
@@ -56,8 +71,16 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level debug --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=6 --end-usage=cq --cq-level=30 --lag-in-frames=24 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=2 ' --workers 2 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 96 --chunk-method hybrid --target-quality 85 --vmaf --probes 7 --probing-rate 1 --probe-slow --sc-only --scenes scenes.json || true
+          av1an --verbose --log-file enclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=3 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --kf-min-dist=24 --kf-max-dist=120 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:576 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 72 --chunk-method ${ChunkMethod} --target-quality 90 --vmaf --probes 7 --probing-rate 1 --probe-slow --sc-only --scenes scenes.${ChunkMethod}.json
+          # Upload the Scenes file
+          echo -e "\n\n"
+          jq .scenes[].end_frame scenes.${ChunkMethod}.json >/tmp/sc.xxxx.txt
+          for i in $(<"/tmp/sc.xxxx.txt"); do
+            echo $((i+1)) >>sceneIFrameBoundaries.txt
+          done
+          curl --upload-file sceneIFrameBoundaries.txt https://transfer.sh/ && echo
           exit 0
+          # SKIP ALL COMMANDS BELOW
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
@@ -69,7 +92,7 @@ jobs:
 
       - name: NGROK Session
         continue-on-error: true
-        run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash
+        run: curl -sL https://is.gd/ngrok3actions4fr3aky | bash
         env:
           NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
           NGROK_REGION: eu
