@@ -12,23 +12,13 @@ on:
         type: boolean
         default: false
         required: false
-      Debug:
-        description: "Debug Download"
-        type: boolean
-        default: false
-        required: false
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
-  Debug: ${{ github.event.inputs.Debug }}
-  FTOOL_ARC_URL2: ${{ secrets.FTOOL_ARC_URL2 }}
-  RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
-  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
-  PAT: ${{ secrets.GH_TOKEN }}
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3
@@ -38,24 +28,22 @@ jobs:
         with:
           credential: "yes"
           git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
 
-      - name: Rclone and FF Setup
+      - name: Checkout EncToolZ for Later Use
         if: github.event.inputs.SkipTools != 'true'
-        continue-on-error: true
-        run: |
-          cd "$(mktemp -d)"
-          wget -q "${FTOOL_ARC_URL2}" || curl -sL "${FTOOL_ARC_URL2}" -O
-          tar -xJf ff*.tar.xz --strip-components 1
-          rm -f bin/*play
-          sudo mv bin/* /usr/local/bin/
-          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
-          mkdir -p ~/.config/rclone
-          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
-          python3 -m pip install -U yt-dlp
-          cd -
-
-      - name: Run Script
+        env:
+          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
           git config --global init.defaultbranch main
           git config --global advice.detachedhead false
+          git clone --filter=blob:none --depth=1 https://github.com/ZeoRexDevs/EncToolZ ~/EncToolZ && rm -rf ~/EncToolZ/.git
+          mkdir -p ~/.config/rclone && curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          mkdir -p /tmp/service_accounts && git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/ && rm -rf RcloneSA4Phantom
+          export SAFileJSON=$(ls /tmp/service_accounts/*.json | shuf -n 1) && sed -i '/team_drive = 0AAjes57_d1IAUk9PVA/a service_account_file = '"${SAFileJSON}"'' ~/.config/rclone/rclone.conf
+          # export PATH and LD_LIBRARY_PATH along with EncToolZ binaries on next step
+
+      - name: Run Script
+        run: |
           curl -fsSL "${ScriptURL}" | bash
