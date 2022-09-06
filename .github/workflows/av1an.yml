@@ -1,4 +1,4 @@
-name: Av1an Remote NGShell
+name: Av1an NGShell
 
 on:
   workflow_dispatch:
@@ -18,11 +18,21 @@ on:
         - hybrid
         - select
         - segment
+      ConcatMethod:
+        description: Concat Method
+        required: true
+        default: ffmpeg
+        type: choice
+        options:
+        - ffmpeg
+        - mkvmerge
+        - ivf
 
 env:
   SOURCERY: ${{ secrets.SOURCERY }}
   FILEURL: ${{  github.event.inputs.FILEURL }}
   ChunkMethod: ${{ github.event.inputs.ChunkMethod }}
+  ConcatMethod: ${{ github.event.inputs.ConcatMethod }}
   RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
   av1anTag: "master" # "sha-3e32699"
 
@@ -71,7 +81,7 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=3 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --kf-min-dist=24 --kf-max-dist=120 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -g 120 -vf scale=-2:576 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 72 --chunk-method ${ChunkMethod} --target-quality 90 --vmaf --probes 7 --probing-rate 1 --probe-slow --sc-only --scenes scenes.${ChunkMethod}.json
+          av1an --verbose --log-file sclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=5 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --target-quality 90 --vmaf --probes 7 --probing-rate 1 --probe-slow --sc-only --scenes scenes.${ChunkMethod}.json
           # Upload the Scenes file
           echo -e "\n\n"
           jq .scenes[].end_frame scenes.${ChunkMethod}.json >/tmp/sc.xxxx.txt
@@ -79,8 +89,7 @@ jobs:
             echo $((i+1)) >>sceneIFrameBoundaries.txt
           done
           curl --upload-file sceneIFrameBoundaries.txt https://transfer.sh/ && echo
-          exit 0
-          # SKIP ALL COMMANDS BELOW
+          av1an --verbose --log-file enclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=5 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --target-quality 90 --vmaf --probes 7 --probing-rate 1 --probe-slow --resume --scenes scenes.${ChunkMethod}.json
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv
