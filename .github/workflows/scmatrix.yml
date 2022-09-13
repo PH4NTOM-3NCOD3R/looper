@@ -20,12 +20,6 @@ on:
       Var1ValC:
         description: "Variable #1 Value for Job C"
         required: true
-      Var1ValD:
-        description: "Variable #1 Value for Job D"
-        required: true
-      Var1ValE:
-        description: "Variable #1 Value for Job E"
-        required: true
       StateVar2:
         description: "State Variable #2"
         required: true
@@ -38,12 +32,6 @@ on:
         required: true
       Var2ValC:
         description: "Variable #2 Value for Job C"
-        required: true
-      Var2ValD:
-        description: "Variable #2 Value for Job D"
-        required: true
-      Var2ValE:
-        description: "Variable #2 Value for Job E"
         required: true
 
 env:
@@ -66,10 +54,6 @@ jobs:
           Var2Val: ${{github.event.inputs.Var2ValB}}
         - Var1Val: ${{github.event.inputs.Var1ValC}}
           Var2Val: ${{github.event.inputs.Var2ValC}}
-        - Var1Val: ${{github.event.inputs.Var1ValD}}
-          Var2Val: ${{github.event.inputs.Var2ValD}}
-        - Var1Val: ${{github.event.inputs.Var1ValE}}
-          Var2Val: ${{github.event.inputs.Var2ValE}}
     env:
       Var1Val: ${{matrix.Var1Val}}
       Var2Val: ${{matrix.Var2Val}}
