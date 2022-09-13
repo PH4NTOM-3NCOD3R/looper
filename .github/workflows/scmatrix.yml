@@ -36,8 +36,6 @@ on:
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
-  StateVar1: ${{ github.event.inputs.StateVar1 }}
-  StateVar2: ${{ github.event.inputs.StateVar2 }}
 
 jobs:
   build:
@@ -45,16 +43,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        StateVar1: ["${{github.event.inputs.StateVar1}}"]
-        StateVar2: ["${{github.event.inputs.StateVar2}}"]
         include:
-        - Var1Val: ${{github.event.inputs.Var1ValA}}
+        - StateVar1: ${{github.event.inputs.StateVar1}}
+          StateVar2: ${{github.event.inputs.StateVar2}}
+          Var1Val: ${{github.event.inputs.Var1ValA}}
           Var2Val: ${{github.event.inputs.Var2ValA}}
-        - Var1Val: ${{github.event.inputs.Var1ValB}}
+        - StateVar1: ${{github.event.inputs.StateVar1}}
+          StateVar2: ${{github.event.inputs.StateVar2}}
+          Var1Val: ${{github.event.inputs.Var1ValB}}
           Var2Val: ${{github.event.inputs.Var2ValB}}
-        - Var1Val: ${{github.event.inputs.Var1ValC}}
+        - StateVar1: ${{github.event.inputs.StateVar1}}
+          StateVar2: ${{github.event.inputs.StateVar2}}
+          Var1Val: ${{github.event.inputs.Var1ValC}}
           Var2Val: ${{github.event.inputs.Var2ValC}}
     env:
+      StateVar1: ${{matrix.StateVar1}}
+      StateVar2: ${{matrix.StateVar2}}
       Var1Val: ${{matrix.Var1Val}}
       Var2Val: ${{matrix.Var2Val}}
 
