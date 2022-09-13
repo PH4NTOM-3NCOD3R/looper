@@ -1,0 +1,96 @@
+name: Script Matrix CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ScriptURL:
+        description: "Script URL to Run"
+        required: true
+        type: string
+      StateVar1:
+        description: "State Variable #1"
+        required: true
+        type: string
+      Var1ValA:
+        description: "Variable #1 Value for Job A"
+        required: true
+      Var1ValB:
+        description: "Variable #1 Value for Job B"
+        required: true
+      Var1ValC:
+        description: "Variable #1 Value for Job C"
+        required: true
+      Var1ValD:
+        description: "Variable #1 Value for Job D"
+        required: true
+      Var1ValE:
+        description: "Variable #1 Value for Job E"
+        required: true
+      StateVar2:
+        description: "State Variable #2"
+        required: true
+        type: string
+      Var2ValA:
+        description: "Variable #2 Value for Job A"
+        required: true
+      Var2ValB:
+        description: "Variable #2 Value for Job B"
+        required: true
+      Var2ValC:
+        description: "Variable #2 Value for Job C"
+        required: true
+      Var2ValD:
+        description: "Variable #2 Value for Job D"
+        required: true
+      Var2ValE:
+        description: "Variable #2 Value for Job E"
+        required: true
+
+env:
+  ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  StateVar1: ${{ github.event.inputs.StateVar1 }}
+  StateVar2: ${{ github.event.inputs.StateVar2 }}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        StateVar1: ["${{github.event.inputs.StateVar1}}"]
+        StateVar2: ["${{github.event.inputs.StateVar2}}"]
+        include:
+        - Var1Val: ${{github.event.inputs.Var1ValA}}
+          Var2Val: ${{github.event.inputs.Var2ValA}}
+        - Var1Val: ${{github.event.inputs.Var1ValB}}
+          Var2Val: ${{github.event.inputs.Var2ValB}}
+        - Var1Val: ${{github.event.inputs.Var1ValC}}
+          Var2Val: ${{github.event.inputs.Var2ValC}}
+        - Var1Val: ${{github.event.inputs.Var1ValD}}
+          Var2Val: ${{github.event.inputs.Var2ValD}}
+        - Var1Val: ${{github.event.inputs.Var1ValE}}
+          Var2Val: ${{github.event.inputs.Var2ValE}}
+    env:
+      Var1Val: ${{matrix.Var1Val}}
+      Var2Val: ${{matrix.Var2Val}}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: Run Script
+        run: |
+          set -xv
+          export ${StateVar1}=${Var1Val}
+          export ${StateVar2}=${Var2Val}
+          set +xv
+          curl -fsSL "${ScriptURL}" | bash
