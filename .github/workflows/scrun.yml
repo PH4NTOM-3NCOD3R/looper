@@ -7,10 +7,15 @@ on:
         description: "Script URL to Run"
         required: true
         type: string
+      RunAsRoot:
+        description: "Run As Root?"
+        type: boolean
+        default: false
+        required: false
       SkipTools:
         description: "Skip Tools Installation"
         type: boolean
-        default: false
+        default: true
         required: false
 
 env:
@@ -45,5 +50,11 @@ jobs:
           # export PATH and LD_LIBRARY_PATH along with EncToolZ binaries on next step
 
       - name: Run Script
+        if: github.event.inputs.RunAsRoot != 'true'
         run: |
           curl -fsSL "${ScriptURL}" | bash
+
+      - name: Run Script As Root
+        if: github.event.inputs.RunAsRoot == 'true'
+        run: |
+          curl -fsSL "${ScriptURL}" | sudo bash
