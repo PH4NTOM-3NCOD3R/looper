@@ -39,7 +39,7 @@ jobs:
 
   ping2:
     runs-on: ubuntu-latest
-    if: github.event.inputs.P1NG_MULTIPLIER -ge 2
+    if: github.event.inputs.P1NG_MULTIPLIER >= 2
     needs: ping1
 
     steps:
@@ -59,7 +59,7 @@ jobs:
 
   ping3:
     runs-on: ubuntu-latest
-    if: github.event.inputs.P1NG_MULTIPLIER -ge 3
+    if: github.event.inputs.P1NG_MULTIPLIER >= 3
     needs: [ping1,ping2]
 
     steps:
@@ -79,7 +79,7 @@ jobs:
 
   ping4:
     runs-on: ubuntu-latest
-    if: github.event.inputs.P1NG_MULTIPLIER -ge 4
+    if: github.event.inputs.P1NG_MULTIPLIER >= 4
     needs: [ping1,ping2,ping3]
 
     steps:
