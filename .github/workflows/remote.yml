@@ -26,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: 'main'
 
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
@@ -50,13 +52,13 @@ jobs:
 
       - name: Empty
         continue-on-error: true
-        timeout-minutes: 45
+        timeout-minutes: 145
         run: |
-          until [[ "${TIME_LEFT:=40}" = 0 ]]; do
-            printf "Please wait %s Minute(s) ...\n" "${TIME_LEFT}"
+          until [[ "${TIME_LEFT:=140}" = 0 ]]; do
+            printf "Grace Period = %s Minute(s) ...\n" "${TIME_LEFT}"
             sleep 1m
             TIME_LEFT=$((TIME_LEFT - 1))
           done
-          printf "You have 3 minutes 59 seconds left.\n"
+          printf "You have 3 minutes 59 seconds left to live.\n"
           sleep 4m
           exit
