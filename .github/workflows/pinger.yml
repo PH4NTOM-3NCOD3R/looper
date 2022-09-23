@@ -12,7 +12,7 @@ on:
         description: "P1NG3R JOB MULTIPLIER"
         type: number
         required: false
-        default: 3
+        default: 4
 
 env:
   APP_URL: ${{ github.event.inputs.APP_URL }}
@@ -27,11 +27,11 @@ jobs:
         run: |
           echo -e "Initial ping to TTK Bot"
           curl -sL "${APP_URL}" && echo
-          sleep 10m
-          for i in {01..28}; do
-            echo -e "\nTrying ${i} of 28" 
+          sleep 5m
+          for i in {01..30}; do
+            echo -e "\nTrying ${i} of 30" 
             curl -sL "${APP_URL}" && echo
-            sleep 10m
+            sleep 11m
           done
           echo -e "Final ping to TTK Bot"
           curl -sL "${APP_URL}" && echo
@@ -45,13 +45,14 @@ jobs:
     steps:
       - name: P1NG3R 2
         run: |
-          echo -e "Initial ping to TTK Bot"
+          echo -e "Secondary ping to TTK Bot"
+          sleep 5m
           curl -sL "${APP_URL}" && echo
           sleep 10m
-          for i in {01..28}; do
-            echo -e "\nTrying ${i} of 28" 
+          for i in {01..30}; do
+            echo -e "\nTrying ${i} of 30" 
             curl -sL "${APP_URL}" && echo
-            sleep 10m
+            sleep 11m
           done
           echo -e "Final ping to TTK Bot"
           curl -sL "${APP_URL}" && echo
@@ -65,13 +66,14 @@ jobs:
     steps:
       - name: P1NG3R 3
         run: |
-          echo -e "Initial ping to TTK Bot"
+          echo -e "3rd ping to TTK Bot"
+          sleep 5m
           curl -sL "${APP_URL}" && echo
           sleep 10m
-          for i in {01..28}; do
-            echo -e "\nTrying ${i} of 28" 
+          for i in {01..30}; do
+            echo -e "\nTrying ${i} of 30" 
             curl -sL "${APP_URL}" && echo
-            sleep 10m
+            sleep 11m
           done
           echo -e "Final ping to TTK Bot"
           curl -sL "${APP_URL}" && echo
@@ -85,13 +87,14 @@ jobs:
     steps:
       - name: P1NG3R 4
         run: |
-          echo -e "Initial ping to TTK Bot"
+          echo -e "4th ping to TTK Bot"
+          sleep 5m
           curl -sL "${APP_URL}" && echo
           sleep 10m
-          for i in {01..28}; do
-            echo -e "\nTrying ${i} of 28" 
+          for i in {01..30}; do
+            echo -e "\nTrying ${i} of 30" 
             curl -sL "${APP_URL}" && echo
-            sleep 10m
+            sleep 11m
           done
           echo -e "Final ping to TTK Bot"
           curl -sL "${APP_URL}" && echo
