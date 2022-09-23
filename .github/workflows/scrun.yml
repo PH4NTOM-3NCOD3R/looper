@@ -17,9 +17,14 @@ on:
         type: boolean
         default: true
         required: false
+      CustomEnvs:
+        description: "Custom Env Vars, x=a y=2"
+        type: string
+        required: false
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  CustomEnvs: ${{ github.event.inputs.CustomEnvs }}
 
 jobs:
   build:
@@ -48,6 +53,15 @@ jobs:
           mkdir -p /tmp/service_accounts && git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/ && rm -rf RcloneSA4Phantom
           export SAFileJSON=$(ls /tmp/service_accounts/*.json | shuf -n 1) && sed -i '/team_drive = 0AAjes57_d1IAUk9PVA/a service_account_file = '"${SAFileJSON}"'' ~/.config/rclone/rclone.conf
           # export PATH and LD_LIBRARY_PATH along with EncToolZ binaries on next step
+
+      - name: Export Custom Env
+        if: github.event.inputs.CustomEnvs != ''
+        run: |
+          set -xv
+          for e in $(sed 's/\s/\n/g' <<<"${CustomEnvs}"); do
+            echo "${e}" >>${GITHUB_ENV}
+          done
+          set +xv
 
       - name: Run Script
         if: github.event.inputs.RunAsRoot != 'true'
