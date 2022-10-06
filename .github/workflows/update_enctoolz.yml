@@ -1,0 +1,25 @@
+name: EncToolZ Updater CI
+
+on:
+  schedule:
+    # Runs at 04:10 UTC on Sat. 
+    - cron: '10 4 * * SAT'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          ref: 'main'
+      - name: GitHub Auth
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - name: Update EncToolZ
+        run: |
+          curl -fsSL "https://gist.github.com/rokibhasansagar/4e2498d9b09b46695aa759f1c800c4f1/raw/9adc71016073bac527e425820ce9ca28c6ab2b84/UpdateEncToolZ.sh" | bash
