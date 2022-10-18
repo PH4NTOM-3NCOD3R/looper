@@ -63,7 +63,8 @@ jobs:
         id: set-params
         run: |
           export matrix=[$(for i in $(seq -w 001 ${finalChunk}); do printf \""%s\"\n" "${i}"; done | shuf | paste -sd, -)]
-          git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom /tmp/service_accounts
+          git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom
+          mkdir -p /tmp/service_accounts && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/
           export safile=$(ls /tmp/service_accounts/*.json | shuf -n 1)
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
           echo "safile=${safile}" >> $GITHUB_OUTPUT
