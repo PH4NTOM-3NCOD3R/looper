@@ -70,8 +70,10 @@ jobs:
         run: |
           # Generate MangaName
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
-          export MangaName=$(sed 's/[!?.~]$//g;s/[!?.~]$//g;s/'\''//g' <<<${MangaName})
-          echo "::set-output name=MangaName::${MangaName}"
+          MangaName=$(sed 's/[!?.~]$//g;s/[!?.~]//g;s/'\''//g' <<<"${MangaName}")
+          export MangaName=$(sed 's/&#39;//g' <<<"${MangaName}")
+          echo "MangaName=${MangaName}" >> $GITHUB_OUTPUT
+          echo -e "MangaName == ${MangaName}"
           if [[ ${GenRaw} == 'true' ]]; then
             export input_matrix="{\"format\":\"raw\",\"compressed\":\"true\"},{\"format\":\"raw\",\"compressed\":\"false\"}"
           fi
@@ -96,7 +98,7 @@ jobs:
             export input_matrix+="{\"format\":\"cb7-volume\",\"compressed\":\"true\"}"
           fi
           export matrix={\"include\":[${input_matrix}]}
-          echo "::set-output name=matrix::${matrix}"
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
 
   dexloader:
     name: Mangadex Downloader
@@ -158,8 +160,6 @@ jobs:
             mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --replace
           }
           echo "::endgroup::"
-          echo "Putting contents into Sanitized Folder..."
-          mv -f ${MangaName:0:2}* ${MangaName} 2>/dev/null
           if [[ ${format} == "raw"* ]]; then
             rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
             echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
