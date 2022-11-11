@@ -164,6 +164,7 @@ jobs:
             rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
             echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
             cd "${MangaName:0:2}"* 2>/dev/null || cd ${MangaName%% *}*
+            du -sh .
             for i in *; do
               if [[ -d "${i}" ]]; then
                 pushd "${i}" &>/dev/null
