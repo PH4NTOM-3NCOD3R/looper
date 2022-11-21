@@ -155,6 +155,8 @@ jobs:
           fi
           echo "::group:: [+] Download Task"
           mkdir -p mangadex && cd mangadex
+          # Blacklist MangaPlus Group as they are just Redirect Links
+          export MANGADEXDL_GROUP_BLACKLIST="4f1de6a2-f0c5-4ac5-bce5-02c7dbb67deb"
           mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name || {
             sleep 5s
             mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --replace
