@@ -11,6 +11,10 @@ on:
         description: "Range of Chapters"
         required: false
         type: string
+      ScanlatorGroup:
+        description: "Specific Scanlator Group ID"
+        required: false
+        type: string
       GenRaw:
         description: "Generate Raw (optimum)"
         required: false
@@ -46,6 +50,7 @@ env:
   MDx_Location: "MDx_Uploads"
   MangadexURL: ${{ github.event.inputs.MangadexURL }}
   ChapterRange: ${{ github.event.inputs.ChapterRange }}
+  ScanlatorGroup: ${{ github.event.inputs.ScanlatorGroup }}
   GenRaw: ${{ github.event.inputs.GenRaw }}
   GenRawVol: ${{ github.event.inputs.GenRawVol }}
   GenPDF: ${{ github.event.inputs.GenPDF }}
@@ -70,7 +75,7 @@ jobs:
         run: |
           # Generate MangaName
           MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
-          MangaName=$(sed 's/[!?.~]$//g;s/[!?.~]//g;s/'\''//g' <<<"${MangaName}")
+          MangaName=$(sed 's/[!?.~]$//g;s/[!?.~]//g;s/'\''//g;s/!//g' <<<"${MangaName}")
           export MangaName=$(sed 's/&#39;//g' <<<"${MangaName}")
           echo "MangaName=${MangaName}" >> $GITHUB_OUTPUT
           echo -e "MangaName == ${MangaName}"
@@ -138,6 +143,9 @@ jobs:
       - name: Manga Downloader Task
         run: |
           # Prepare Vars
+          if [[ ${ScanlatorGroup} != '' ]]; then
+            export GroupOpts="--group ${ScanlatorGroup}"
+          fi
           if [[ ${compressed} == 'false' ]]; then
             export ImageQuality="High" ImgQOpts=""
           elif [[ ${compressed} == 'true' ]]; then
@@ -157,9 +165,9 @@ jobs:
           mkdir -p mangadex && cd mangadex
           # Blacklist MangaPlus Group as they are just Redirect Links
           export MANGADEXDL_GROUP_BLACKLIST="4f1de6a2-f0c5-4ac5-bce5-02c7dbb67deb"
-          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name || {
+          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name || {
             sleep 5s
-            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} --save-as ${format} --use-chapter-title --no-group-name --replace
+            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name --replace
           }
           echo "::endgroup::"
           if [[ ${format} == "raw"* ]]; then
