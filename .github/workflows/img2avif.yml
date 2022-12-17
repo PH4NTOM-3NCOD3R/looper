@@ -1,0 +1,135 @@
+name: IMG2AVIF CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      Input_Directory:
+        description: "MDx Input Directory Name"
+        required: true
+        type: string
+      Output_Directory:
+        description: "MDx Output Directory Name"
+        required: false
+        type: string
+      ChapterRange:
+        description: "RegEx Range of Chapters"
+        required: true
+        type: string
+      LogLevel:
+        description: "FFmpeg LogLevel"
+        required: true
+        type: choice
+        options:
+        - error
+        - warning
+        - verbose
+        - info
+        default: error
+      CRF:
+        description: "AOMEnc CRF Scale"
+        required: true
+        type: number
+        default: 34
+      PixFormat:
+        description: "Output PixFormat"
+        required: true
+        type: choice
+        options:
+        - yuv420p12le
+        - gray12le
+        default: yuv420p12le
+      DEBUG:
+        description: "DEBUG?"
+        required: true
+        type: boolean
+        default: false
+
+env:
+  BaseScript_Hash: "7a9838ac5410d70f829eddb230779342"
+  DEBUG: ${{ github.event.inputs.DEBUG }}
+
+jobs:
+  prepare:
+    name: Prepare img2avif Matrix
+    runs-on: ubuntu-22.04
+    env:
+      ChapterRange: ${{ github.event.inputs.ChapterRange }}
+
+    outputs:
+      latestRevision: ${{ steps.set-params.outputs.latestRevision }}
+      matrix: ${{ steps.set-params.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - name: Create EncMatrix
+        id: set-params
+        run: |
+          # Get GIST latest Revision number
+          export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/" | grep "/img2avif\.converter\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
+          echo "latestRevision=${latestRevision}" >> $GITHUB_OUTPUT
+          echo -e "[i] Using ${latestRevision} as latestRevision"
+          # Generate Workflow Matrix
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xRangeExpander.sh" -O
+          sed -i 's/__RANGE__/'"${ChapterRange}"'/g' ./xRangeExpander.sh
+          source ./xRangeExpander.sh && rm ./xRangeExpander.sh
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
+          echo -e "[i] Generated Matrix: ${matrix}"
+
+  img2avif:
+    name: IMG2AVIF Converter
+    runs-on: ubuntu-22.04
+    needs: prepare
+
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
+    env:
+      range: ${{ matrix.range }}
+      latestRevision: ${{ needs.prepare.outputs.latestRevision }}
+      LogLevel: ${{ github.event.inputs.LogLevel }}
+      CRF: ${{ github.event.inputs.CRF }}
+      PixFormat: ${{ github.event.inputs.PixFormat }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - name: Workstation
+        env:
+          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+          Input_Directory: ${{ github.event.inputs.Input_Directory }}
+          Output_Directory: ${{ github.event.inputs.Output_Directory }}
+        run: |
+          echo "::group::[i] Setup tools"
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xToolsetup.sh" -O
+          source ./xToolsetup.sh && rm ./xToolsetup.sh
+          echo "::endgroup::"
+          echo "::group::[i] IMG2AVIF Operation"
+          mkdir -p ~/data && cd ~/data
+          if [[ ${Output_Directory} == "" ]]; then
+            export Output_Directory=$(sed 's/[!?.~]//g;s/'\''//g;s/!//g;s/\s/./g' <<<"${Input_Directory}")
+          fi
+          # Core libaom Converter Scriptlet
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.core.v0.sh" -O
+          # Main AIO Converter + Downloader/Uploader
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.converter.sh" -O
+          export xRange=$(sed 's/\+/ /g' <<<"${range}")
+          sed -i 's/__JOBRANGE__/'"${xRange}"'/g' ./img2avif.converter.sh
+          source ./img2avif.converter.sh
+          rm ./img2avif.*.sh
+          echo "::endgroup::"
