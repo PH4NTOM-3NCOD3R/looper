@@ -19,7 +19,7 @@ on:
         description: "Generate Raw (optimum)"
         required: false
         type: boolean
-        default: false
+        default: true
       GenRawVol:
         description: "Generate Raw Volume"
         required: false
@@ -173,7 +173,7 @@ jobs:
           if [[ ${format} == "raw"* ]]; then
             rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
             echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
-            cd "${MangaName:0:2}"* 2>/dev/null || cd ${MangaName%% *}*
+            cd "${MangaName:0:1}"* 2>/dev/null || cd ${MangaName%% *}*
             du -sh .
             for i in *; do
               if [[ -d "${i}" ]]; then
