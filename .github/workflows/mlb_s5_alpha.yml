@@ -3,12 +3,8 @@ name: MLB S05 Alpha Matrix
 on:
   workflow_dispatch:
     inputs:
-      ScrUrl:
-        description: "mlb_s5_alpha_scr_url"
-        required: true
-        type: string
       EpCode:
-        description: "EpCode, 01|02|03"
+        description: "EpCode, 01|02|03|.."
         required: true
         type: string
       VidRes:
@@ -35,7 +31,7 @@ on:
         type: string
 
 env:
-  mlb_s5_alpha_scr_url: ${{github.event.inputs.ScrUrl}}
+  MLB_S5_SCR_HASH: "b6a3eb03bc7a49785b580ff4b4e23b77"
   EpCode: ${{github.event.inputs.EpCode}}
   VidRes: ${{github.event.inputs.VidRes}}
   EncSpeed: ${{github.event.inputs.EncSpeed}}
@@ -51,6 +47,7 @@ jobs:
     outputs:
       matrix: ${{steps.set-params.outputs.matrix}}
       safile: ${{steps.set-params.outputs.safile}}
+      latestRevision: ${{steps.set-params.outputs.latestRevision}}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,12 +59,18 @@ jobs:
       - name: Create EncMatrix
         id: set-params
         run: |
+          # Generate Matrix
           export matrix=[$(for i in $(seq -w 001 ${finalChunk}); do printf \""%s\"\n" "${i}"; done | shuf | paste -sd, -)]
+          # Extract SAFile
           git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom
           mkdir -p /tmp/service_accounts && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/
           export safile=$(ls /tmp/service_accounts/*.json | shuf -n 1)
+          # Get GIST latest Revision number
+          export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${MLB_S5_SCR_HASH}/" | grep "/mlb_s5_alpha_scr\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
+          # Export params
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
           echo "safile=${safile}" >> $GITHUB_OUTPUT
+          echo "latestRevision=${latestRevision}" >> $GITHUB_OUTPUT
 
   enc:
     name: Miraculou5
@@ -83,6 +86,7 @@ jobs:
     env:
       ChunkNum: ${{ matrix.ChunkNum }}
       safile: ${{needs.primary.outputs.safile}}
+      latestRevision: ${{needs.primary.outputs.latestRevision}}
 
     steps:
       - uses: actions/checkout@v3
@@ -94,4 +98,4 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: MiraculouS 5${{env.EpCode}} - ${{env.ChunkNum}} EnCodeZ
         run: |
-          curl -sL "${mlb_s5_alpha_scr_url}" | bash
+          curl -sL "https://gist.github.com/rokibhasansagar/${MLB_S5_SCR_HASH}/raw/${latestRevision}/mlb_s5_alpha_scr.sh" | bash
