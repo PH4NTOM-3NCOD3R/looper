@@ -25,8 +25,8 @@ on:
         - verbose
         - info
         default: error
-      CRF:
-        description: "AOMEnc CRF Scale"
+      QScale:
+        description: "AOMEnc QScale"
         required: true
         type: number
         default: 34
@@ -95,7 +95,7 @@ jobs:
       range: ${{ matrix.range }}
       latestRevision: ${{ needs.prepare.outputs.latestRevision }}
       LogLevel: ${{ github.event.inputs.LogLevel }}
-      CRF: ${{ github.event.inputs.CRF }}
+      QScale: ${{ github.event.inputs.QScale }}
       PixFormat: ${{ github.event.inputs.PixFormat }}
 
     steps:
