@@ -24,4 +24,4 @@ jobs:
 
       - name: Cleanup TD Trash
         run: |
-          rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list
+          rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list  --tpslimit 10 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms

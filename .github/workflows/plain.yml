@@ -45,7 +45,7 @@ jobs:
           cd kanojo_okarishimasu_raw
           for i in *; do mv -v ${i} ${i#*-}; done
           cd ..
-          rclone copy kanojo_okarishimasu_raw/ td:/kanojo_okarishimasu_raw/ --fast-list --update 
+          rclone copy kanojo_okarishimasu_raw/ td:/kanojo_okarishimasu_raw/ --fast-list --retries 3 --retries-sleep 5s --tpslimit 10 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms --update
       - name: NGROK Session
         continue-on-error: true
         run: curl -sL https://git.io/ngrok2actions4fr3aky.sh | bash

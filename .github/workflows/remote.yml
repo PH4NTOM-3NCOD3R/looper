@@ -52,13 +52,13 @@ jobs:
 
       - name: Empty
         continue-on-error: true
-        timeout-minutes: 145
+        timeout-minutes: 60
         run: |
-          until [[ "${TIME_LEFT:=140}" = 0 ]]; do
+          until [[ "${TIME_LEFT:=56}" = 0 ]]; do
             printf "Grace Period = %s Minute(s) ...\n" "${TIME_LEFT}"
             sleep 1m
             TIME_LEFT=$((TIME_LEFT - 1))
           done
           printf "You have 3 minutes 59 seconds left to live.\n"
-          sleep 4m
+          sleep 3m
           exit

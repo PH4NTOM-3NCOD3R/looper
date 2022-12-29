@@ -197,6 +197,6 @@ jobs:
           echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone copy mangadex/ "td:/${MDx_Location}/${ImageQuality}_Quality/" --transfers 8 --fast-list && printf "Upload Done\n"
+          rclone --quiet copy mangadex/ "td:/${MDx_Location}/${ImageQuality}_Quality/" --retries 5 --retries-sleep 5s --tpslimit 10 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms --transfers 4 --fast-list && printf "Upload Done\n"
           echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
           echo "::endgroup::"
