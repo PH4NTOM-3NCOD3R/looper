@@ -38,6 +38,11 @@ on:
         - yuv420p12le
         - gray12le
         default: yuv420p12le
+      SkipSmallPics:
+        description: "Skip Smaller Pics?"
+        required: true
+        type: boolean
+        default: true
       DEBUG:
         description: "DEBUG?"
         required: true
@@ -97,6 +102,7 @@ jobs:
       LogLevel: ${{ github.event.inputs.LogLevel }}
       QScale: ${{ github.event.inputs.QScale }}
       PixFormat: ${{ github.event.inputs.PixFormat }}
+      SkipSmallPics: ${{ github.event.inputs.SkipSmallPics }}
 
     steps:
       - uses: actions/checkout@v3
