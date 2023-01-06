@@ -28,9 +28,6 @@ on:
         - jp
         - in
 
-env:
-  SOURCERY: ${{ secrets.SOURCERY }}
-
 jobs:
   shell:
     runs-on: ${{ github.event.inputs.RunnerMachine }}
@@ -63,11 +60,11 @@ jobs:
 
       - name: Empty
         continue-on-error: true
-        timeout-minutes: 60
+        timeout-minutes: 55
         run: |
-          until [[ "${TIME_LEFT:=56}" = 0 ]]; do
+          until [[ "${TIME_LEFT:=51}" = 0 ]]; do
             printf "Grace Period = %s Minute(s) ...\n" "${TIME_LEFT}"
-            sleep 1m
+            sleep 59.9s
             TIME_LEFT=$((TIME_LEFT - 1))
           done
           printf "You have 3 minutes 59 seconds left to live.\n"
