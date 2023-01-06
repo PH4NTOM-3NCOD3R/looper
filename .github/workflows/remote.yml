@@ -1,8 +1,19 @@
 name: Remote NGShell CI
 
+run-name: Remote NGShell in ${{ inputs.RunnerMachine }} by @${{ github.actor }}
+
 on:
   workflow_dispatch:
     inputs:
+      RunnerMachine:
+        description: "Runner Machine"
+        required: true
+        default: "ubuntu-22.04"
+        type: choice
+        options:
+        - ubuntu-22.04
+        - ubuntu-20.04
+        - ubuntu-18.04
       NgrokRegion:
         description: "Ngrok Region"
         required: true
@@ -22,7 +33,7 @@ env:
 
 jobs:
   shell:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
 
     steps:
       - uses: actions/checkout@v3
