@@ -19,7 +19,7 @@ on:
       TotalJobCount:
         description: "Maximum Jobs to Run in Matrix"
         required: true
-        default: "4"
+        default: "5"
         type: choice
         options:
         - "1"
@@ -32,6 +32,10 @@ on:
         type: boolean
         default: false
         required: false
+      CommonJobCustomVars:
+        description: "Common Custom Vars for All Jobs (pipe-separated, url-encoded)"
+        required: false
+        type: string
       Job1CustomVars:
         description: "Custom Vars for Job #1"
         required: false
@@ -64,6 +68,7 @@ jobs:
     name: Script Runner 1
     runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
+      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
     steps:
       - uses: actions/checkout@v3
@@ -82,9 +87,17 @@ jobs:
             for i in $(sed 's/\s/\n/g' <<<"${Job1CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(awk -F'=' '{print $2}' <<<"${i}")
-              export $v="$w"
+              echo $v="$w" && export $v=$w
             done
           fi
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
@@ -95,6 +108,7 @@ jobs:
     name: Script Runner 2
     runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
+      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
     steps:
       - uses: actions/checkout@v3
@@ -113,9 +127,17 @@ jobs:
             for i in $(sed 's/\s/\n/g' <<<"${Job2CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(awk -F'=' '{print $2}' <<<"${i}")
-              export $v="$w"
+              echo $v="$w" && export $v=$w
             done
           fi
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
@@ -126,6 +148,7 @@ jobs:
     name: Script Runner 3
     runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
+      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
     steps:
       - uses: actions/checkout@v3
@@ -144,9 +167,17 @@ jobs:
             for i in $(sed 's/\s/\n/g' <<<"${Job3CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(awk -F'=' '{print $2}' <<<"${i}")
-              export $v="$w"
+              echo $v="$w" && export $v=$w
             done
           fi
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
@@ -157,6 +188,7 @@ jobs:
     name: Script Runner 4
     runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
+      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
     steps:
       - uses: actions/checkout@v3
@@ -175,9 +207,17 @@ jobs:
             for i in $(sed 's/\s/\n/g' <<<"${Job4CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(awk -F'=' '{print $2}' <<<"${i}")
-              export $v="$w"
+              echo $v="$w" && export $v=$w
             done
           fi
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
@@ -188,6 +228,7 @@ jobs:
     name: Script Runner 5
     runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
+      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
     steps:
       - uses: actions/checkout@v3
@@ -206,9 +247,17 @@ jobs:
             for i in $(sed 's/\s/\n/g' <<<"${Job5CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(awk -F'=' '{print $2}' <<<"${i}")
-              export $v="$w"
+              echo $v="$w" && export $v=$w
             done
           fi
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
