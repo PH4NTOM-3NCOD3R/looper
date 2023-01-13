@@ -15,13 +15,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: "main"
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
 
       - name: Prepare Rclone
+        env:
+          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
-          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
-          mkdir -p ~/.config/rclone
-          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          curl -sL "https://gist.github.com/rokibhasansagar/7a9838ac5410d70f829eddb230779342/raw/fb6642fcc0d0101e5c95965802ca57944df2ead4/xToolsetup.sh" -O
+          sed -i 's|ftools\s||g' ./xToolsetup.sh
+          bash ./xToolsetup.sh && rm ./xToolsetup.sh
+          export PATH="/home/runner/EncToolZ/rtools/usr/bin:${PATH}"
+          echo "/home/runner/EncToolZ/rtools/usr/bin" >>${GITHUB_PATH}
 
       - name: Cleanup TD Trash
         run: |
-          rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list  --tpslimit 10 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms
+          echo && rclone size td: --fast-list && sleep 1s
+          echo && rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list --tpslimit 850 --tpslimit-burst 20 --drive-pacer-burst 700 --drive-pacer-min-sleep 500ms
