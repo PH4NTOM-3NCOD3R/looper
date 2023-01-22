@@ -122,15 +122,23 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
       - name: Prepare tools
         env:
-          RCLONE_INSTALL_MIRROR: ${{ secrets.RCLONE_INSTALL_MIRROR }}
           RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
         run: |
           # Prepare Rclone
-          curl -sL "${RCLONE_INSTALL_MIRROR}" | sudo bash
-          mkdir -p ~/.config/rclone
-          curl -sL "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
+          curl -sL "https://gist.github.com/rokibhasansagar/7a9838ac5410d70f829eddb230779342/raw/fb6642fcc0d0101e5c95965802ca57944df2ead4/xToolsetup.sh" -O
+          sed -i 's|ftools\s||g' ./xToolsetup.sh
+          bash ./xToolsetup.sh && rm ./xToolsetup.sh
+          export PATH="/home/runner/EncToolZ/ftools/usr/bin:/home/runner/EncToolZ/rtools/usr/bin:${PATH}"
+          echo "/home/runner/EncToolZ/rtools/usr/bin" >>${GITHUB_PATH}
           # Prepare Downloader
           cd `mktemp -d`
           wget -q "https://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip"
@@ -140,6 +148,7 @@ jobs:
           fc-cache -r &>/dev/null
           python3 -m pip install -U pip
           python3 -m pip install mangadex-downloader[optional]
+          mangadex-dl --update 2>/dev/null || true
       - name: Manga Downloader Task
         run: |
           # Prepare Vars
