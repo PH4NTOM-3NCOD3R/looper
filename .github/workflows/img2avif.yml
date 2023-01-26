@@ -43,6 +43,15 @@ on:
         required: true
         type: boolean
         default: true
+      DenoiseLevel:
+        description: "AOM Denoising Level"
+        required: true
+        type: choice
+        options:
+        - none
+        - min
+        - max
+        default: none
       DEBUG:
         description: "DEBUG?"
         required: true
@@ -103,6 +112,7 @@ jobs:
       QScale: ${{ github.event.inputs.QScale }}
       PixFormat: ${{ github.event.inputs.PixFormat }}
       SkipSmallPics: ${{ github.event.inputs.SkipSmallPics }}
+      DenoiseLevel: ${{ github.event.inputs.DenoiseLevel }}
 
     steps:
       - uses: actions/checkout@v3
