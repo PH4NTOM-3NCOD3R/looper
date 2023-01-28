@@ -22,4 +22,5 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Update EncToolZ
         run: |
-          curl -fsSL "https://gist.github.com/rokibhasansagar/4e2498d9b09b46695aa759f1c800c4f1/raw/019ec2216196418d1a4df199f581b910385415fe/UpdateEncToolZ.sh" | bash
+          export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/4e2498d9b09b46695aa759f1c800c4f1/" | grep "/UpdateEncToolZ\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
+          curl -fsSL "https://gist.github.com/rokibhasansagar/4e2498d9b09b46695aa759f1c800c4f1/raw/${latestRevision}/UpdateEncToolZ.sh" | bash
