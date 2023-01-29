@@ -15,43 +15,48 @@ on:
         description: "RegEx Range of Chapters"
         required: true
         type: string
-      LogLevel:
-        description: "FFmpeg LogLevel"
-        required: true
-        type: choice
-        options:
-        - error
-        - warning
-        - verbose
-        - info
-        default: error
       QScale:
         description: "AOMEnc QScale"
         required: true
         type: number
         default: 34
-      PixFormat:
-        description: "Output PixFormat"
+      Range:
+        description: "YUV Color Range"
         required: true
         type: choice
         options:
-        - yuv420p12le
-        - gray12le
-        default: yuv420p12le
+        - f
+        - l
+        default: f
+      DeltaQ:
+        description: "DeltaQ Mode"
+        required: true
+        type: choice
+        options:
+        - "3"
+        - "1"
+        default: "3"
+      Sharpness:
+        description: "Sharpness Bias"
+        required: true
+        type: choice
+        options:
+        - "0"
+        - "1"
+        default: "0"
+      DnlLvl:
+        description: "Denoise Level"
+        required: true
+        type: choice
+        options:
+        - "0"
+        - "1"
+        default: "0"
       SkipSmallPics:
         description: "Skip Smaller Pics?"
         required: true
         type: boolean
         default: true
-      DenoiseLevel:
-        description: "AOM Denoising Level"
-        required: true
-        type: choice
-        options:
-        - none
-        - min
-        - max
-        default: none
       DEBUG:
         description: "DEBUG?"
         required: true
@@ -59,7 +64,7 @@ on:
         default: false
 
 env:
-  BaseScript_Hash: "7a9838ac5410d70f829eddb230779342"
+  BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
   DEBUG: ${{ github.event.inputs.DEBUG }}
 
 jobs:
@@ -106,13 +111,15 @@ jobs:
       fail-fast: false
       matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
     env:
-      range: ${{ matrix.range }}
+      jobrange: ${{ matrix.jobrange }}
       latestRevision: ${{ needs.prepare.outputs.latestRevision }}
-      LogLevel: ${{ github.event.inputs.LogLevel }}
       QScale: ${{ github.event.inputs.QScale }}
+      Range: ${{ github.event.inputs.Range }}
+      DeltaQ: ${{ github.event.inputs.DeltaQ }}
+      Sharpness: ${{ github.event.inputs.Sharpness }}
+      DnlLvl: ${{ github.event.inputs.DnlLvl }}
       PixFormat: ${{ github.event.inputs.PixFormat }}
       SkipSmallPics: ${{ github.event.inputs.SkipSmallPics }}
-      DenoiseLevel: ${{ github.event.inputs.DenoiseLevel }}
 
     steps:
       - uses: actions/checkout@v3
@@ -135,17 +142,15 @@ jobs:
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xToolsetup.sh" -O
           source ./xToolsetup.sh && rm ./xToolsetup.sh
           echo "::endgroup::"
-          echo "::group::[i] IMG2AVIF Operation"
           mkdir -p ~/data && cd ~/data
           if [[ ${Output_Directory} == "" ]]; then
             export Output_Directory=$(sed 's/[!?.~]//g;s/'\''//g;s/!//g;s/\s/./g' <<<"${Input_Directory}")
           fi
           # Core libaom Converter Scriptlet
-          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.core.v0.sh" -O
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.core.v1.sh" -O
           # Main AIO Converter + Downloader/Uploader
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.converter.sh" -O
-          export xRange=$(sed 's/\+/ /g' <<<"${range}")
+          export xRange=$(sed 's/\+/ /g' <<<"${jobrange}")
           sed -i 's/__JOBRANGE__/'"${xRange}"'/g' ./img2avif.converter.sh
           source ./img2avif.converter.sh
           rm ./img2avif.*.sh
-          echo "::endgroup::"
