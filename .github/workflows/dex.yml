@@ -176,7 +176,7 @@ jobs:
           export MANGADEXDL_GROUP_BLACKLIST="4f1de6a2-f0c5-4ac5-bce5-02c7dbb67deb"
           mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name || {
             sleep 5s
-            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name --replace
+            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name --replace 2>/dev/null || true
           }
           echo "::endgroup::"
           if [[ ${format} == "raw"* ]]; then

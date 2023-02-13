@@ -38,5 +38,10 @@ jobs:
 
       - name: Cleanup TD Trash
         run: |
-          echo && rclone size td: --fast-list && sleep 1s
-          echo && rclone delete td: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list --tpslimit 850 --tpslimit-burst 20 --drive-pacer-burst 700 --drive-pacer-min-sleep 500ms
+          for i in td tdz1 tdz3 tdz5; do
+            echo "::group:: Cleanup for ${i}"
+            export safile="$(ls /tmp/service_accounts/*.json | shuf -n 1)"
+            echo && rclone --drive-service-account-file="${safile}" size ${i}: --fast-list && sleep 1s
+            echo && rclone --drive-service-account-file="${safile}" delete ${i}: --drive-trashed-only --drive-use-trash=false --verbose=1 --fast-list --tpslimit 1250 --tpslimit-burst 150 --drive-pacer-burst 700 --drive-pacer-min-sleep 200ms
+            echo "::endgroup::"
+          done
