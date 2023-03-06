@@ -20,6 +20,11 @@ on:
         required: false
         type: boolean
         default: true
+      GenRawComp:
+        description: "Generate Compressed Raw"
+        required: false
+        type: boolean
+        default: false
       GenRawVol:
         description: "Generate Raw Volume"
         required: false
@@ -35,16 +40,6 @@ on:
         required: false
         type: boolean
         default: false
-      GenCB7:
-        description: "Generate CB7"
-        required: false
-        type: boolean
-        default: false
-      GenCB7Vol:
-        description: "Generate CB7 Volume"
-        required: false
-        type: boolean
-        default: false
 
 env:
   MDx_Location: "MDx_Uploads"
@@ -52,11 +47,10 @@ env:
   ChapterRange: ${{ github.event.inputs.ChapterRange }}
   ScanlatorGroup: ${{ github.event.inputs.ScanlatorGroup }}
   GenRaw: ${{ github.event.inputs.GenRaw }}
+  GenRawComp: ${{ github.event.inputs.GenRawComp }}
   GenRawVol: ${{ github.event.inputs.GenRawVol }}
   GenPDF: ${{ github.event.inputs.GenPDF }}
   GenPDFVol: ${{ github.event.inputs.GenPDFVol }}
-  GenCB7: ${{ github.event.inputs.GenCB7 }}
-  GenCB7Vol: ${{ github.event.inputs.GenCB7Vol }}
 
 jobs:
   prepare:
@@ -65,6 +59,8 @@ jobs:
 
     outputs:
       MangaName: ${{ steps.set-params.outputs.MangaName }}
+      MangaNameX: ${{ steps.set-params.outputs.MangaNameX }}
+      MangaNameY: ${{ steps.set-params.outputs.MangaNameY }}
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
@@ -74,13 +70,20 @@ jobs:
         id: set-params
         run: |
           # Generate MangaName
-          MangaName=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}')
-          MangaName=$(sed 's/[!?.~]$//g;s/[!?.~]//g;s/'\''//g;s/!//g' <<<"${MangaName}")
-          export MangaName=$(sed 's/&#39;//g' <<<"${MangaName}")
+          MangaNameX=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}' | sed 's/&#39;/'\''/g')
+          MangaNameY="${MangaNameX//[\'\,\!\?\~]/}"
+          MangaNameY="${MangaNameY//[^[:alnum:]]/.}"
+          export MangaName=$(sed 's/\.\.\././g;s/\.\././g;s/\.$//g' <<<"${MangaNameY}")
+          echo "MangaNameX=${MangaNameX}" >> $GITHUB_OUTPUT
+          echo "MangaNameY=${MangaNameY}" >> $GITHUB_OUTPUT
           echo "MangaName=${MangaName}" >> $GITHUB_OUTPUT
           echo -e "MangaName == ${MangaName}"
           if [[ ${GenRaw} == 'true' ]]; then
-            export input_matrix="{\"format\":\"raw\",\"compressed\":\"true\"},{\"format\":\"raw\",\"compressed\":\"false\"}"
+            export input_matrix="{\"format\":\"raw\",\"compressed\":\"false\"}"
+          fi
+          if [[ ${GenRawComp} == 'true' ]]; then
+            [[ ${input_matrix} != "" ]] && export input_matrix+=","
+            export input_matrix="{\"format\":\"raw\",\"compressed\":\"true\"}"
           fi
           if [[ ${GenRawVol} == 'true' ]]; then
             [[ ${input_matrix} != "" ]] && export input_matrix+=","
@@ -93,14 +96,6 @@ jobs:
           if [[ ${GenPDFVol} == 'true' ]]; then
             [[ ${input_matrix} != "" ]] && export input_matrix+=","
             export input_matrix+="{\"format\":\"pdf-volume\",\"compressed\":\"true\"}"
-          fi
-          if [[ ${GenCB7} == 'true' ]]; then
-            [[ ${input_matrix} != "" ]] && export input_matrix+=","
-            export input_matrix+="{\"format\":\"cb7\",\"compressed\":\"true\"}"
-          fi
-          if [[ ${GenCB7Vol} == 'true' ]]; then
-            [[ ${input_matrix} != "" ]] && export input_matrix+=","
-            export input_matrix+="{\"format\":\"cb7-volume\",\"compressed\":\"true\"}"
           fi
           export matrix={\"include\":[${input_matrix}]}
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
@@ -115,6 +110,8 @@ jobs:
       matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
     env:
       MangaName: ${{ needs.prepare.outputs.MangaName }}
+      MangaNameX: ${{ needs.prepare.outputs.MangaNameX }}
+      MangaNameY: ${{ needs.prepare.outputs.MangaNameY }}
       format: ${{ matrix.format }}
       compressed: ${{ matrix.compressed }}
 
@@ -140,12 +137,6 @@ jobs:
           export PATH="/home/runner/EncToolZ/ftools/usr/bin:/home/runner/EncToolZ/rtools/usr/bin:${PATH}"
           echo "/home/runner/EncToolZ/rtools/usr/bin" >>${GITHUB_PATH}
           # Prepare Downloader
-          cd `mktemp -d`
-          wget -q "https://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip"
-          unzip -q -j freefont-ttf-20120503.zip
-          sudo mkdir -p /usr/share/fonts/truetype/freefont/ && sudo mv *.ttf /usr/share/fonts/truetype/freefont/
-          cd - &>/dev/null
-          fc-cache -r &>/dev/null
           python3 -m pip install -U pip
           python3 -m pip install mangadex-downloader[optional]
           mangadex-dl --update 2>/dev/null || true
@@ -164,30 +155,32 @@ jobs:
           if [[ ${ChapterRange} != "" ]]; then
             export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
           fi
-          if [[ ${format} == "raw"* ]]; then
-            if ! rclone lsf "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null; then
-              echo "This is a Dummy File" >/tmp/dummy.txt
-              rclone copyto /tmp/dummy.txt "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt"
-            fi
-          fi
           echo "::group:: [+] Download Task"
-          mkdir -p mangadex && cd mangadex
+          mkdir -p ~/data/${MangaName} ~/mangadex/
+          cd ~/mangadex
           # Blacklist MangaPlus Group as they are just Redirect Links
           export MANGADEXDL_GROUP_BLACKLIST="4f1de6a2-f0c5-4ac5-bce5-02c7dbb67deb"
-          mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name || {
-            sleep 5s
-            mangadex-downloader "${MangadexURL}" --language "en" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name --replace 2>/dev/null || true
+          mangaLoader() {
+            mangadex-downloader "${MangadexURL}" --force-https --language "en" --no-oneshot-chapter --no-progress-bar --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name "$@"
           }
+          if ! mangaLoader; then
+            sleep 2s && echo -e "\nRETRYING..."
+            mangaLoader --verbose --replace
+          fi
+          cd "${MangaNameX}" 2>/dev/null    # || { cd "${MangaNameX:0:1}"* 2>/dev/null || cd ${MangaNameX%% *}*; }
+          mv -f * ~/data/${MangaName}/ 2>/dev/null || true
+          cd ..
           echo "::endgroup::"
           if [[ ${format} == "raw"* ]]; then
-            rclone delete "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/dummy.txt" 2>/dev/null || true
             echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
-            cd "${MangaName:0:1}"* 2>/dev/null || cd ${MangaName%% *}*
-            du -sh .
+            cd ~/data/${MangaName}/
+            rm *.db *.json 2>/dev/null || true
+            printf "Total Size of the Images is - %s\n\n" "$(du -sh . | awk '{print $1}')"
             for i in *; do
               if [[ -d "${i}" ]]; then
                 pushd "${i}" &>/dev/null
                 tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 0.5s
+                echo -e "Compressed Images into ${i}.tzst"
                 popd &>/dev/null
                 rm -rf "${i}"
               fi
@@ -196,16 +189,14 @@ jobs:
           fi
       - name: Manga Upload Task
         run: |
-          cd mangadex
-          [[ -f "${MangaName}"/details.json ]] && rm "${MangaName}"/details.json 2>/dev/null || true
-          cd ..
+          cd ~/data/
           echo "::group:: [i] Debug Details"
-          printf "Total Size of the Upload will be %s\n\n" "$(du -sh * | awk '{print $1}')"
+          printf "Total Size of the Upload will be %s\n\n" "$(du -sh ${MangaName} | awk '{print $1}')"
           printf "Contents of the Manga...\n\n"
-          tree -h -L 2 mangadex/
+          tree -h -L 2 ${MangaName}/
           echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone --quiet copy mangadex/ "td:/${MDx_Location}/${ImageQuality}_Quality/" --retries 5 --retries-sleep 5s --tpslimit 10 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms --transfers 4 --fast-list && printf "Upload Done\n"
-          echo -e "Go to: \"https://gdindex.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/\" and Navigate to: \"${MangaName}\" to download them."
+          rclone --quiet copy ${MangaName}/ "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 5 --retries-sleep 5s --tpslimit 50 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms --transfers 4 --fast-list && printf "Upload Done\n"
+          echo -e "Go to: \"https://gdrivecdn.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
           echo "::endgroup::"
