@@ -11,6 +11,15 @@ on:
         description: "MDx Output Directory Name"
         required: false
         type: string
+      chWidth:
+        description: "Chapter Per Job"
+        required: true
+        type: choice
+        options:
+        - "4"
+        - "5"
+        - "6"
+        default: "6"
       ChapterRange:
         description: "RegEx Range of Chapters"
         required: true
@@ -72,6 +81,7 @@ jobs:
     name: Prepare img2avif Matrix
     runs-on: ubuntu-22.04
     env:
+      chWidth: ${{ github.event.inputs.chWidth }}
       ChapterRange: ${{ github.event.inputs.ChapterRange }}
 
     outputs:
