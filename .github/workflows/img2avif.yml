@@ -66,15 +66,9 @@ on:
         required: true
         type: boolean
         default: true
-      DEBUG:
-        description: "DEBUG?"
-        required: true
-        type: boolean
-        default: false
 
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
-  DEBUG: ${{ github.event.inputs.DEBUG }}
 
 jobs:
   prepare:
