@@ -161,11 +161,15 @@ jobs:
           # Blacklist MangaPlus Group as they are just Redirect Links
           export MANGADEXDL_GROUP_BLACKLIST="4f1de6a2-f0c5-4ac5-bce5-02c7dbb67deb"
           mangaLoader() {
-            mangadex-downloader "${MangadexURL}" --force-https --language "en" --no-oneshot-chapter --no-progress-bar --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name "$@"
+            mangadex-downloader "${MangadexURL}" --force-https --language "en" --no-track --no-oneshot-chapter --no-progress-bar --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title --no-group-name "$@"
           }
-          if ! mangaLoader; then
+          mangaLoader 2>&1 | tee -a /tmp/mangaLoader.log
+          if [[ $(tail -n20 /tmp/mangaLoader.log | grep -i "Download finished") ]]; then
+            echo -e "[i] Download Operation Successfull."
+          else
             sleep 2s && echo -e "\nRETRYING..."
-            mangaLoader --verbose --replace
+            rm /tmp/mangaLoader.log
+            mangaLoader --verbose --replace 2>&1 | tee -a /tmp/mangaLoader.log
           fi
           cd "${MangaNameX}" 2>/dev/null    # || { cd "${MangaNameX:0:1}"* 2>/dev/null || cd ${MangaNameX%% *}*; }
           mv -f * ~/data/${MangaName}/ 2>/dev/null || true
