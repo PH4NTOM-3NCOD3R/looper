@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
+        os: [ubuntu-20.04, ubuntu-22.04]
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
         run: |
           echo
           echo "::group:: [+] Initial Disk Space"
-          df -hlT
+          df --sync -BM -T -a
           echo "::endgroup::"
           {
             find /opt /usr/share /usr/lib ~/.local/lib -depth -type d -name __pycache__ \
@@ -66,6 +66,8 @@ jobs:
           echo "::endgroup::"
           echo "::group:: [+] /etc/ Check"
           du -sh /etc/ 2>/dev/null && echo && sudo ls -lAog /etc/ 2>/dev/null
+          sudo ls -lA /etc/skel/ 2>/dev/null
+          sudo tree -h /etc/skel/ 2>/dev/null
           echo "::endgroup::"
           echo "::group:: [+] /snap/ Check"
           sudo du -sh /snap/* 2>/dev/null
