@@ -16,10 +16,11 @@ on:
         required: true
         type: choice
         options:
+        - "3"
         - "4"
         - "5"
         - "6"
-        default: "6"
+        default: "4"
       ChapterRange:
         description: "RegEx Range of Chapters"
         required: true
@@ -28,7 +29,7 @@ on:
         description: "AOMEnc QScale"
         required: true
         type: number
-        default: 34
+        default: 35
       Range:
         description: "YUV Color Range"
         required: true
@@ -36,7 +37,7 @@ on:
         options:
         - f
         - l
-        default: f
+        default: l
       DeltaQ:
         description: "DeltaQ Mode"
         required: true
@@ -60,7 +61,7 @@ on:
         options:
         - "0"
         - "1"
-        default: "0"
+        default: "1"
       SkipSmallPics:
         description: "Skip Smaller Pics?"
         required: true
