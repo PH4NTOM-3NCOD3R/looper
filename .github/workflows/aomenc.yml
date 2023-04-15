@@ -1,0 +1,126 @@
+name: aomenc on Av1an
+
+on:
+  push:
+    paths:
+      - '.github/workflows/aomenc.yml'
+  workflow_dispatch:
+    inputs:
+      ChunkMethod:
+        description: Chunk Method
+        required: true
+        default: lsmash
+        type: choice
+        options:
+        - lsmash
+        - ffms2
+        - hybrid
+        - select
+        - segment
+      ConcatMethod:
+        description: Concat Method
+        required: true
+        default: ffmpeg
+        type: choice
+        options:
+        - ffmpeg
+        - mkvmerge
+        - ivf
+
+env:
+  ChunkMethod: ${{ github.event.inputs.ChunkMethod }}
+  ConcatMethod: ${{ github.event.inputs.ConcatMethod }}
+
+jobs:
+  aomenc:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - name: SSH Keepalive
+        uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+      - name: Install zing
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          sudo apt-fast install ffmpeg -qy &>/dev/null
+          HOMEBREW_NO_INSTALL_CLEANUP=true brew install zimg
+          git clone --filter=blob:none https://github.com/sekrit-twc/zimg.git
+          cd zimg
+          git submodule update --init --recursive --depth=1
+          ./autogen.sh
+          ./configure --disable-shared --enable-static --with-pic
+          make -j4
+          sudo make install
+          cd ..
+          python3 -m pip install cython
+          git clone --filter=blob:none https://github.com/vapoursynth/vapoursynth.git
+          cd vapoursynth
+          ./autogen.sh
+          ./configure
+          make -j4
+          sudo make install
+      - name: Prepare Av1an Worker
+        continue-on-error: true
+        run: |
+          echo "::group:: Prepare"
+          # printf "\n[+] Cloning EncToolZ for later use...\n"
+          # git clone -q --filter=blob:none --depth=1 https://github.com/ZeoRexDevs/EncToolZ ~/EncToolZ && rm -rf ~/EncToolZ/.git
+          # printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
+          # docker rmi -f $(docker images -q) &>/dev/null
+          printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
+          docker pull -q archlinux:base-devel
+          docker pull -q masterofzen/av1an:master
+          printf "\n[i] Av1an Docker Image Download Complete.\n\n"
+          echo "::endgroup::"
+          echo "::group:: Build vaporsynth"
+          #eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          #sudo apt-fast install ffmpeg -qy &>/dev/null
+          #HOMEBREW_NO_INSTALL_CLEANUP=true brew install zimg
+          #python3 -m pip install cython
+          #python3 -m pip install git+https://github.com/vapoursynth/vsrepo.git@master
+          #python3 -m pip list --user
+          #python3 -m vsrepo --help || python3 -m vsrepo.py --help
+          #git clone https://github.com/vapoursynth/vapoursynth.git
+          #cd vapoursynth
+          #./autogen.sh
+          #./configure
+          #make -j4
+          #make install
+          python3 -m pip install git+https://github.com/vapoursynth/vsrepo.git@master
+          git clone --filter=blob:none https://github.com/vapoursynth/vsrepo.git
+          cd vsrepo
+          python3 vsrepo.py --help || true
+          python3 vsrepo.py install lsmas ffms2 havsfunc vsdeband muvsfunc mvsfunc vskernels vsscale vsutil || true
+          python3 -m pip install havsfunc vsdeband vsutil getnative vsscale vskernels
+          echo "::endgroup::"
+
+          mkdir -p /home/runner/data && cd /home/runner/data
+
+          echo "::group:: [+] Scene Detect"
+          wget -q "https://gdrivecdn.fr3akyphantom.workers.dev/0:/AnimeZ/HoriMiya.OP/Horimiya-OP1v2-BD1080.webm"
+          mediainfo "Horimiya-OP1v2-BD1080.webm"
+          wget -q "https://gist.github.com/rokibhasansagar/373d747e66a9e53eb2321e6cbe7cc311/raw/vaporsynth_descale_encoder.vpy"
+          wget -q "https://gist.github.com/rokibhasansagar/373d747e66a9e53eb2321e6cbe7cc311/raw/vaporsynth_encoder.vpy"
+          ls -lAog
+          printf "\n[i] Starting Av1an Worker...\n\n"
+          shopt -s expand_aliases
+          alias av1an="docker run --privileged -v "$(pwd):/videos" -v "/usr:/usr" --user $(id -u):$(id -g) -i masterofzen/av1an:master"
+          export ChunkMethod=${ChunkMethod:-lsmash} ConcatMethod=${ConcatMethod:-ffmpeg}
+          av1an --verbose --log-file sclog --log-level trace --keep -i "./vaporsynth_encoder.vpy" -o vaporsynth_encoded.mkv --workers 4 --resume --encoder aom --video-params ' --usage=0 --cpu-used=4 --end-usage=q --cq-level=23 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 --arnr-strength=1 --arnr-maxframes=3 --disable-trellis-quant=0 --enable-fwd-kf=1 --min-q=1 --deltaq-mode=1 --bit-depth=10 --enable-chroma-deltaq=1 --tune=ssim ' --photon-noise 3 --chroma-noise --passes 2 --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --sc-downscale-height 576 --scenes scenes.${ChunkMethod}.json --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --sc-only
+          # Upload the Scenes file
+          echo -e "\n\n"
+          jq .scenes[].end_frame scenes.${ChunkMethod}.json >/tmp/sc.xxxx.txt
+          for i in $(<"/tmp/sc.xxxx.txt"); do
+            echo $((i+1)) >>sceneIFrameBoundaries.txt
+          done
+          tar -I'zstd -19 -T2' -cf sclog_with_boundary.${ChunkMethod}.tzst sclog.log sceneIFrameBoundaries.txt scenes.${ChunkMethod}.json
+          curl --upload-file sclog_with_boundary.${ChunkMethod}.tzst https://transfer.sh/ && echo
+          echo "::endgroup::"
