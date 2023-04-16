@@ -1,0 +1,41 @@
+name: aomenc wintest
+
+on:
+  push:
+    paths:
+      - '.github/workflows/wintest.yml'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  try:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+      #- name: Install
+        #run: |
+          #choco install -y --no-progress ngrok
+          #ngrok tcp --help
+          #ngrok tcp 22 --log "NGLog.txt" --authtoken "${{ secrets.NGROK_TOKEN }}" &
+          #sleep 10s && cat "NGLog.txt" && sleep 30m && echo "20 Minutes gone"
+          #sleep 2m
