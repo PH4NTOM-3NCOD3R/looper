@@ -171,7 +171,7 @@ jobs:
             rm /tmp/mangaLoader.log
             mangaLoader --verbose --replace 2>&1 | tee -a /tmp/mangaLoader.log
           fi
-          cd "${MangaNameX}" 2>/dev/null    # || { cd "${MangaNameX:0:1}"* 2>/dev/null || cd ${MangaNameX%% *}*; }
+          cd "${MangaNameX}" 2>/dev/null || { cd "${MangaNameX:0:1}"* 2>/dev/null || cd ${MangaNameX%% *}*; }
           mv -f * ~/data/${MangaName}/ 2>/dev/null || true
           cd ..
           echo "::endgroup::"
@@ -183,7 +183,7 @@ jobs:
             for i in *; do
               if [[ -d "${i}" ]]; then
                 pushd "${i}" &>/dev/null
-                tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 0.5s
+                ( tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 0.5s; )
                 echo -e "Compressed Images into ${i}.tzst"
                 popd &>/dev/null
                 rm -rf "${i}"
