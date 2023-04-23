@@ -16,13 +16,13 @@ on:
         required: true
         type: choice
         options:
+        - "2"
         - "3"
         - "4"
         - "5"
-        - "6"
-        default: "4"
+        default: "3"
       ChapterRange:
-        description: "RegEx Range of Chapters"
+        description: "RegEx Range of Chapters -OR- all"
         required: true
         type: string
       QScale:
@@ -70,6 +70,8 @@ on:
 
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
+  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  Input_Directory: ${{ github.event.inputs.Input_Directory }}
 
 jobs:
   prepare:
@@ -102,7 +104,7 @@ jobs:
           echo -e "[i] Using ${latestRevision} as latestRevision"
           # Generate Workflow Matrix
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xRangeExpander.sh" -O
-          sed -i 's/__RANGE__/'"${ChapterRange}"'/g' ./xRangeExpander.sh
+          sed -i 's/__RANGE__/'"${ChapterRange,,}"'/g' ./xRangeExpander.sh
           source ./xRangeExpander.sh && rm ./xRangeExpander.sh
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
           echo -e "[i] Generated Matrix: ${matrix}"
@@ -139,8 +141,6 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Workstation
         env:
-          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
-          Input_Directory: ${{ github.event.inputs.Input_Directory }}
           Output_Directory: ${{ github.event.inputs.Output_Directory }}
         run: |
           echo "::group::[i] Setup tools"
