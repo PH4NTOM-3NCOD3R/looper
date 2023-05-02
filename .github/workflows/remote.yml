@@ -13,7 +13,11 @@ on:
         options:
         - ubuntu-22.04
         - ubuntu-20.04
-        - ubuntu-18.04
+      ScriptURL:
+        description: "Script URL to Run before SSH"
+        required: true
+        default: "-"
+        type: string
       NgrokRegion:
         description: "Ngrok Region"
         required: true
@@ -32,6 +36,9 @@ jobs:
   shell:
     runs-on: ${{ github.event.inputs.RunnerMachine }}
 
+    env:
+      ScriptURL: ${{ github.event.inputs.ScriptURL }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -46,6 +53,15 @@ jobs:
 
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
+
+      - name: PreSSH Script Runner
+        continue-on-error: true
+        run: |
+          if [[ -n ${ScriptURL} && ${ScriptURL} != "-" ]]; then
+            mkdir -p ~/data && cd ~/data
+            curl -sL "${ScriptURL}" >~/data/script.sh
+            source ~/data/script.sh
+          fi 2>/dev/null || true
 
       - name: NGROK Session
         continue-on-error: true
