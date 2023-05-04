@@ -11,7 +11,6 @@ on:
         options:
         - ubuntu-22.04
         - ubuntu-20.04
-        - ubuntu-18.04
       ScriptURL:
         description: "Script URL to Run"
         required: true
@@ -21,13 +20,18 @@ on:
         type: boolean
         default: false
         required: false
+      CleanWS:
+        description: "Clean Workspace with slimhub_actions"
+        type: boolean
+        default: false
+        required: false
       SkipTools:
         description: "Skip Tools Installation"
         type: boolean
         default: true
         required: false
       CustomEnvs:
-        description: "Custom Env Vars, x=a y=2"
+        description: "Custom Env Vars (pipe-separated), x=a|y=2"
         type: string
         required: false
 
@@ -50,6 +54,10 @@ jobs:
         env:
           PAT: ${{ secrets.GH_TOKEN }}
 
+      - name: Use slimhub_actions
+        if: github.event.inputs.CleanWS == 'true'
+        uses: rokibhasansagar/slimhub_actions@main
+
       - name: Checkout EncToolZ for Later Use
         if: github.event.inputs.SkipTools != 'true'
         env:
@@ -63,17 +71,16 @@ jobs:
           export SAFileJSON=$(ls /tmp/service_accounts/*.json | shuf -n 1) && sed -i '/team_drive = 0AAjes57_d1IAUk9PVA/a service_account_file = '"${SAFileJSON}"'' ~/.config/rclone/rclone.conf
           # export PATH and LD_LIBRARY_PATH along with EncToolZ binaries on next step
 
-      - name: Export Custom Env
-        if: github.event.inputs.CustomEnvs != ''
-        run: |
-          set -xv
-          for e in $(sed 's/\s/\n/g' <<<"${CustomEnvs}"); do
-            echo "${e}" >>${GITHUB_ENV}
-          done
-          set +xv
-
       - name: Run Script
         run: |
+          if [[ ${CustomEnvs} != '' ]]; then
+            for i in $(sed 's/|/\n/g' <<<"${CustomEnvs}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v=$w
+            done
+          fi
+          unset v w 2>/dev/null || true
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
