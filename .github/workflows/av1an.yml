@@ -33,7 +33,6 @@ env:
   FILEURL: ${{  github.event.inputs.FILEURL }}
   ChunkMethod: ${{ github.event.inputs.ChunkMethod }}
   ConcatMethod: ${{ github.event.inputs.ConcatMethod }}
-  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
   av1anTag: "master" # "sha-3e32699"
 
 jobs:
@@ -56,10 +55,13 @@ jobs:
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
       - name: Prepare Av1an Worker
+        env:
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
           echo "::group:: Prepare"
-          printf "\n[+] Cloning EncToolZ for later use...\n"
+          printf "\n[+] Cloning EncToolZ + rclone config for later use...\n"
           git clone -q --filter=blob:none --depth=1 https://github.com/ZeoRexDevs/EncToolZ ~/EncToolZ && rm -rf ~/EncToolZ/.git
+          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
           printf "\n[i] Cleaning Up Unneeded Docker Images...\n"
           docker rmi -f $(docker images -q) &>/dev/null
           printf "\n[+] Dwnlaoding Av1an Docker Image...\n"
@@ -70,7 +72,7 @@ jobs:
           echo "::group:: Documentation"
           shopt -s expand_aliases
           alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:${av1anTag}"
-          av1an --help
+          av1an --help 2>&1
           echo "::endgroup::"
 
       - name: Scene Detect Av1an Worker
@@ -82,14 +84,14 @@ jobs:
           curl -fsSL --retry 5 --retry-connrefused --retry-delay 1 "${FILEURL}" -o inputfile.${FILEURL##*.}
           mediainfo "inputfile.${FILEURL##*.}"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file sclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=5 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --sc-downscale-height 720 --scenes scenes.${ChunkMethod}.json --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --target-quality 90 --vmaf --probes 5 --probing-rate 2 --sc-only
+          av1an --verbose --log-file sclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --sc-downscale-height 720 --scenes scenes.${ChunkMethod}.json --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --sc-only
           # Upload the Scenes file
           echo -e "\n\n"
           jq .scenes[].end_frame scenes.${ChunkMethod}.json >/tmp/sc.xxxx.txt
           for i in $(<"/tmp/sc.xxxx.txt"); do
             echo $((i+1)) >>sceneIFrameBoundaries.txt
           done
-          tar -I'zstd -19 -T2' -cf sclog_with_boundary.tzst sclog.log sceneIFrameBoundaries.txt scenes.${ChunkMethod}.json
+          tar -I'zstd --ultra -22 -T2' -cf sclog_with_boundary.tzst sclog.log sceneIFrameBoundaries.txt scenes.${ChunkMethod}.json
           curl --upload-file sclog_with_boundary.tzst https://transfer.sh/ && echo
           echo "::endgroup::"
           echo "::group:: Tree Walk Directory"
@@ -103,7 +105,7 @@ jobs:
           alias av1an="docker run --privileged -v "$(pwd):/videos" --user $(id -u):$(id -g) -i masterofzen/av1an:${av1anTag}"
           echo "::group:: Main Worker"
           printf "\n[i] Starting Av1an Worker...\n\n"
-          av1an --verbose --log-file enclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=5 --end-usage=cq --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --aq-mode=1 --threads=4 --tile-columns=1 ' --workers 3 --passes 2 --ffmpeg ' -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --sc-downscale-height 720 --scenes scenes.${ChunkMethod}.json --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --target-quality 90 --vmaf --probes 5 --probing-rate 2 --resume
+          av1an --verbose --log-file enclog --log-level trace --keep -i "inputfile.${FILEURL##*.}" -o aom_encoded.mkv --encoder aom --video-params ' --usage=0 --cpu-used=4 --end-usage=q --cq-level=28 --lag-in-frames=48 --enable-fwd-kf=1 --auto-alt-ref=1 --enable-qm=1 --qm-min=2 --arnr-strength=2 --arnr-maxframes=4 --aq-mode=1 --threads=4 --tile-columns=1 --color-primaries=bt709 --transfer-characteristics=bt709 --matrix-coefficients=bt709 ' --workers 2 --passes 2 --ffmpeg ' -vf scale=-2:450 ' --max-tries 3 --pix-format yuv420p10le --split-method av-scenechange --sc-method standard --sc-downscale-height 720 --scenes scenes.${ChunkMethod}.json --extra-split 0 --min-scene-len 48 --chunk-method ${ChunkMethod} --concat ${ConcatMethod} --target-quality 85 --vmaf --probes 5 --probing-rate 2 --resume
           echo "::endgroup::"
           echo "::group:: Upload Result"
           mediainfo aom_encoded.mkv

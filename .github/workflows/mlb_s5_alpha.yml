@@ -37,8 +37,7 @@ env:
   EncSpeed: ${{github.event.inputs.EncSpeed}}
   QScale: ${{github.event.inputs.QScale}}
   finalChunk: ${{github.event.inputs.finalChunk}}
-  RCLONE_CONFIG_URL: ${{secrets.RCLONE_CONFIG_URL}}
-
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 jobs:
   primary:
     name: MatrixGen
@@ -61,10 +60,8 @@ jobs:
         run: |
           # Generate Matrix
           export matrix=[$(for i in $(seq -w 001 ${finalChunk}); do printf \""%s\"\n" "${i}"; done | shuf | paste -sd, -)]
-          # Extract SAFile
-          git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom
-          mkdir -p /tmp/service_accounts && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/
-          export safile=$(ls /tmp/service_accounts/*.json | shuf -n 1)
+          # Extract SAFile AS {{safile}}
+          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | sed -n '24,27p' | bash
           # Get GIST latest Revision number
           export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${MLB_S5_SCR_HASH}/" | grep "/mlb_s5_alpha_scr\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
           # Export params
@@ -79,7 +76,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 15
+      max-parallel: 12
       matrix:
         ChunkNum: ${{fromJson(needs.primary.outputs.matrix)}}
 
@@ -98,4 +95,7 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: MiraculouS 5${{env.EpCode}} - ${{env.ChunkNum}} EnCodeZ
         run: |
+          # Setup rclone + config + sa
+          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
+          # Setup ftools + rest of the codes
           curl -sL "https://gist.github.com/rokibhasansagar/${MLB_S5_SCR_HASH}/raw/${latestRevision}/mlb_s5_alpha_scr.sh" | bash

@@ -55,6 +55,8 @@ jobs:
         env:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Run Script
+        env:
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
           if [[ ${OptionalParams} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${OptionalParams}"); do

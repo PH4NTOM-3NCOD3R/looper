@@ -128,14 +128,10 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Prepare tools
         env:
-          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
           # Prepare Rclone
-          curl -sL "https://gist.github.com/rokibhasansagar/7a9838ac5410d70f829eddb230779342/raw/fb6642fcc0d0101e5c95965802ca57944df2ead4/xToolsetup.sh" -O
-          sed -i 's|ftools\s||g' ./xToolsetup.sh
-          bash ./xToolsetup.sh && rm ./xToolsetup.sh
-          export PATH="/home/runner/EncToolZ/ftools/usr/bin:/home/runner/EncToolZ/rtools/usr/bin:${PATH}"
-          echo "/home/runner/EncToolZ/rtools/usr/bin" >>${GITHUB_PATH}
+          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
           # Prepare Downloader
           python3 -m pip install -U pip
           python3 -m pip install mangadex-downloader[optional]
@@ -201,6 +197,7 @@ jobs:
           echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone --quiet copy ${MangaName}/ "td:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 5 --retries-sleep 5s --tpslimit 50 --drive-pacer-burst 20 --drive-pacer-min-sleep 2000ms --transfers 4 --fast-list && printf "Upload Done\n"
-          echo -e "Go to: \"https://gdrivecdn.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
+          rclone --quiet copy ${MangaName}/ "ms365:/Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 5 --retries-sleep 5s --tpslimit 80 --transfers 4 --fast-list && printf "Upload Done\n"
+          echo -e "Use rclone at \"ms365:/Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
+          # echo -e "Go to: \"https://gdrivecdn.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
           echo "::endgroup::"

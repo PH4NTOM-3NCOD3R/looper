@@ -38,6 +38,7 @@ jobs:
 
     env:
       ScriptURL: ${{ github.event.inputs.ScriptURL }}
+      RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 
     steps:
       - uses: actions/checkout@v3

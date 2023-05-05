@@ -57,6 +57,7 @@ env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
   RunAsRoot: ${{ github.event.inputs.RunAsRoot }}
   TotalJobCount: ${{ github.event.inputs.TotalJobCount }}
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 
 jobs:
   runner_a:

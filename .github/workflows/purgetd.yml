@@ -28,7 +28,7 @@ jobs:
 
       - name: Prepare Rclone
         env:
-          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
           curl -sL "https://gist.github.com/rokibhasansagar/7a9838ac5410d70f829eddb230779342/raw/fb6642fcc0d0101e5c95965802ca57944df2ead4/xToolsetup.sh" -O
           sed -i 's|ftools\s||g' ./xToolsetup.sh

@@ -25,10 +25,10 @@ on:
         type: boolean
         default: false
         required: false
-      SkipTools:
-        description: "Skip Tools Installation"
+      SetupRclone:
+        description: "Setup Rclone for Later Use"
         type: boolean
-        default: true
+        default: false
         required: false
       CustomEnvs:
         description: "Custom Env Vars (pipe-separated), x=a|y=2"
@@ -58,18 +58,12 @@ jobs:
         if: github.event.inputs.CleanWS == 'true'
         uses: rokibhasansagar/slimhub_actions@main
 
-      - name: Checkout EncToolZ for Later Use
-        if: github.event.inputs.SkipTools != 'true'
+      - name: Setup Rclone for Later Use
+        if: github.event.inputs.SetupRclone == 'true'
         env:
-          RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
-          git config --global init.defaultbranch main
-          git config --global advice.detachedhead false
-          git clone --filter=blob:none --depth=1 https://github.com/ZeoRexDevs/EncToolZ ~/EncToolZ && rm -rf ~/EncToolZ/.git
-          mkdir -p ~/.config/rclone && curl -fsSL --retry 5 --retry-connrefused --retry-delay 2 "${RCLONE_CONFIG_URL}" >~/.config/rclone/rclone.conf
-          mkdir -p /tmp/service_accounts && git clone -q --filter=blob:none https://github.com/rokibhasansagar/RcloneSA4Phantom && mv RcloneSA4Phantom/accounts/*.json /tmp/service_accounts/ && rm -rf RcloneSA4Phantom
-          export SAFileJSON=$(ls /tmp/service_accounts/*.json | shuf -n 1) && sed -i '/team_drive = 0AAjes57_d1IAUk9PVA/a service_account_file = '"${SAFileJSON}"'' ~/.config/rclone/rclone.conf
-          # export PATH and LD_LIBRARY_PATH along with EncToolZ binaries on next step
+          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
 
       - name: Run Script
         run: |

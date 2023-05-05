@@ -70,7 +70,7 @@ on:
 
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
-  RCLONE_CONFIG_URL: ${{ secrets.RCLONE_CONFIG_URL }}
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   Input_Directory: ${{ github.event.inputs.Input_Directory }}
 
 jobs:
