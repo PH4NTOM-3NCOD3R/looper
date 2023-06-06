@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       Output_Directory:
-        description: "MDx Output Directory Name"
+        description: "MDx Output Directory Name (Optional)"
         required: false
         type: string
       chWidth:
@@ -20,7 +20,7 @@ on:
         - "3"
         - "4"
         - "5"
-        default: "3"
+        default: "2"
       ChapterRange:
         description: "RegEx Range of Chapters -OR- all"
         required: true
@@ -29,7 +29,7 @@ on:
         description: "AOMEnc QScale"
         required: true
         type: number
-        default: 35
+        default: 42
       Range:
         description: "YUV Color Range"
         required: true
@@ -38,35 +38,34 @@ on:
         - f
         - l
         default: l
-      DeltaQ:
-        description: "DeltaQ Mode"
+      Optimization:
+        description: "Sharpness (0|1) + Denoise(0|1|wavelet|wavelet+aom)"
         required: true
         type: choice
         options:
-        - "3"
-        - "1"
-        default: "3"
-      Sharpness:
-        description: "Sharpness Bias"
+        - "0-0"
+        - "0-w"
+        - "0-1"
+        - "1-0"
+        - "1-w"
+        - "1-1"
+        - "1-x"
+        default: "1-1"
+      TilingThreshold:
+        description: "Tiling Threshold, 416<x<512<y<1024"
         required: true
-        type: choice
-        options:
-        - "0"
-        - "1"
-        default: "0"
-      DnlLvl:
-        description: "Denoise Level"
-        required: true
-        type: choice
-        options:
-        - "0"
-        - "1"
-        default: "1"
+        type: number
+        default: 512
       SkipSmallPics:
-        description: "Skip Smaller Pics?"
+        description: "Skip Smaller Pics, x<(2*TilingThreshold)?"
         required: true
         type: boolean
         default: true
+      LongStrip:
+        description: "Is The Manga Longstrip/Webtoon?"
+        required: false
+        type: boolean
+        default: false
 
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
@@ -122,11 +121,10 @@ jobs:
       latestRevision: ${{ needs.prepare.outputs.latestRevision }}
       QScale: ${{ github.event.inputs.QScale }}
       Range: ${{ github.event.inputs.Range }}
-      DeltaQ: ${{ github.event.inputs.DeltaQ }}
-      Sharpness: ${{ github.event.inputs.Sharpness }}
-      DnlLvl: ${{ github.event.inputs.DnlLvl }}
-      PixFormat: ${{ github.event.inputs.PixFormat }}
+      Optimization: ${{ github.event.inputs.Optimization }}
+      TilingThreshold: ${{ github.event.inputs.TilingThreshold }}
       SkipSmallPics: ${{ github.event.inputs.SkipSmallPics }}
+      LongStrip: ${{ github.event.inputs.LongStrip }}
 
     steps:
       - uses: actions/checkout@v3
@@ -149,7 +147,11 @@ jobs:
           echo "::endgroup::"
           mkdir -p ~/data && cd ~/data
           if [[ ${Output_Directory} == "" ]]; then
-            export Output_Directory=$(sed 's/[!?.~]//g;s/'\''//g;s/!//g;s/\s/./g' <<<"${Input_Directory}")
+            if grep -q "\s" <<<"${Input_Directory}"; then
+              export Output_Directory=$(sed 's/[!?.~]//g;s/'\''//g;s/!//g;s/\s/./g' <<<"${Input_Directory}")
+            else
+              export Output_Directory="${Input_Directory}"
+            fi
           fi
           # Core libaom Converter Scriptlet
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/img2avif.core.v1.sh" -O
