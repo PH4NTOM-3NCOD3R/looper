@@ -31,10 +31,11 @@ on:
         type: number
         default: 42
       Range:
-        description: "YUV Color Range"
+        description: "YUV Color Range, JPEG/Full/Limited"
         required: true
         type: choice
         options:
+        - j
         - f
         - l
         default: l
