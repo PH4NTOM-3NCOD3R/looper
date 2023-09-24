@@ -82,7 +82,6 @@ jobs:
       ChapterRange: ${{ github.event.inputs.ChapterRange }}
 
     outputs:
-      latestRevision: ${{ steps.set-params.outputs.latestRevision }}
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
@@ -100,7 +99,6 @@ jobs:
         run: |
           # Get GIST latest Revision number
           export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/" | grep "/img2avif\.converter\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
-          echo "latestRevision=${latestRevision}" >> $GITHUB_OUTPUT
           echo -e "[i] Using ${latestRevision} as latestRevision"
           # Generate Workflow Matrix
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xRangeExpander.sh" -O
@@ -119,7 +117,6 @@ jobs:
       matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
     env:
       jobrange: ${{ matrix.jobrange }}
-      latestRevision: ${{ needs.prepare.outputs.latestRevision }}
       QScale: ${{ github.event.inputs.QScale }}
       Range: ${{ github.event.inputs.Range }}
       Optimization: ${{ github.event.inputs.Optimization }}
@@ -143,6 +140,9 @@ jobs:
           Output_Directory: ${{ github.event.inputs.Output_Directory }}
         run: |
           echo "::group::[i] Setup tools"
+          # Get GIST latest Revision number
+          export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/" | grep "/img2avif\.converter\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
+          echo -e "[i] Using ${latestRevision} as latestRevision"
           curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xToolsetup.sh" -O
           source ./xToolsetup.sh && rm ./xToolsetup.sh
           echo "::endgroup::"
