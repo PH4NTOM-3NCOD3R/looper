@@ -181,7 +181,7 @@ jobs:
             for i in *; do
               if [[ -d "${i}" ]]; then
                 pushd "${i}" &>/dev/null
-                ( tar -I'zstd --ultra -22 --long -T2' -cf ../"${i}".tzst * && sleep 0.5s; )
+                ( tar -I'zstd -9 --long -T2' -cf ../"${i}".tzst * && sleep 0.1s; )
                 echo -e "Compressed Images into ${i}.tzst"
                 popd &>/dev/null
                 rm -rf "${i}"
@@ -199,7 +199,6 @@ jobs:
           echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
-          rclone --quiet copy ${MangaName}/ "ms365:/Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 5 --retries-sleep 5s --tpslimit 80 --transfers 4 --fast-list && printf "Upload Done\n"
-          echo -e "Use rclone at \"ms365:/Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
-          # echo -e "Go to: \"https://gdrivecdn.fr3akyphantom.workers.dev/0:/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
+          rclone --quiet copy ${MangaName}/ "ms365:Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 6 --retries-sleep 5s --tpslimit 120 --transfers 4 --fast-list && printf "Upload Done\n"
+          echo -e "Use rclone at \"ms365:Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/\" to download them."
           echo "::endgroup::"
