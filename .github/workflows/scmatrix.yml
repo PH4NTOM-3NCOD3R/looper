@@ -86,15 +86,15 @@ jobs:
           if [[ ${Job1CustomVars} != '' ]]; then
             for i in $(sed 's/\s/\n/g' <<<"${Job1CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           if [[ ${CommonJobCustomVars} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
@@ -129,15 +129,15 @@ jobs:
           if [[ ${Job2CustomVars} != '' ]]; then
             for i in $(sed 's/\s/\n/g' <<<"${Job2CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           if [[ ${CommonJobCustomVars} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
@@ -172,15 +172,15 @@ jobs:
           if [[ ${Job3CustomVars} != '' ]]; then
             for i in $(sed 's/\s/\n/g' <<<"${Job3CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           if [[ ${CommonJobCustomVars} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
@@ -215,15 +215,15 @@ jobs:
           if [[ ${Job4CustomVars} != '' ]]; then
             for i in $(sed 's/\s/\n/g' <<<"${Job4CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           if [[ ${CommonJobCustomVars} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
@@ -258,15 +258,15 @@ jobs:
           if [[ ${Job5CustomVars} != '' ]]; then
             for i in $(sed 's/\s/\n/g' <<<"${Job5CustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           if [[ ${CommonJobCustomVars} != '' ]]; then
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(awk -F'=' '{print $2}' <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true

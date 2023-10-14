@@ -71,7 +71,7 @@ jobs:
             for i in $(sed 's/|/\n/g' <<<"${CustomEnvs}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v=$w
+              echo $v="$w" && export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
