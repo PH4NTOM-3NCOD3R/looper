@@ -79,7 +79,7 @@ jobs:
 
       - name: NGROK Session
         continue-on-error: true
-        run: curl -sL https://is.gd/ngrok3actions4fr3aky | bash
+        run: curl -sL https://is.gd/ng3actions4fr3aky | bash
         env:
           NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
           NGROK_REGION: ${{ github.event.inputs.NgrokRegion }}
