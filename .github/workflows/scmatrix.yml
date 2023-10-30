@@ -58,6 +58,7 @@ env:
   RunAsRoot: ${{ github.event.inputs.RunAsRoot }}
   TotalJobCount: ${{ github.event.inputs.TotalJobCount }}
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+  GitToken: ${{ secrets.GH_TOKEN }}
 
 jobs:
   runner_a:

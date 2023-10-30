@@ -38,6 +38,7 @@ on:
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
   CustomEnvs: ${{ github.event.inputs.CustomEnvs }}
+  GitToken: ${{ secrets.GH_TOKEN }}
 
 jobs:
   build:
