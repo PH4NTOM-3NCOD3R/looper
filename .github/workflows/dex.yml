@@ -63,7 +63,7 @@ jobs:
       MangaNameY: ${{ steps.set-params.outputs.MangaNameY }}
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Create EncMatrix
@@ -116,7 +116,7 @@ jobs:
       compressed: ${{ matrix.compressed }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets

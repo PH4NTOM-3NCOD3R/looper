@@ -48,7 +48,7 @@ jobs:
       safile: ${{steps.set-params.outputs.safile}}
       latestRevision: ${{steps.set-params.outputs.latestRevision}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: 'main'
       - name: GitHub Auth
@@ -86,7 +86,7 @@ jobs:
       latestRevision: ${{needs.primary.outputs.latestRevision}}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: 'main'
       - name: GitHub Auth

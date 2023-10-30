@@ -69,7 +69,7 @@ jobs:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets
@@ -112,7 +112,7 @@ jobs:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets
@@ -155,7 +155,7 @@ jobs:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets
@@ -198,7 +198,7 @@ jobs:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets
@@ -241,7 +241,7 @@ jobs:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "main"
       - name: Set Git Configs & Secrets

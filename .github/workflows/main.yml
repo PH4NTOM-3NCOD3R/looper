@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
         with:
           git_cookies: "no"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'link-u/cavif'
           path: 'cavif'
           submodules: 'recursive'
           fetch-depth: 3
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'link-u/davif'
           path: 'davif'

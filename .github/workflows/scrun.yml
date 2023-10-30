@@ -45,7 +45,7 @@ jobs:
     runs-on: ${{ github.event.inputs.RunnerMachine }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
