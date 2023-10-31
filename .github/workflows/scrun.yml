@@ -64,7 +64,7 @@ jobs:
         env:
           RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
         run: |
-          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
+          curl -sL --retry 5 --retry-connrefused "https://is.gd/rclonesetup4fr3aky" | bash
 
       - name: Run Script
         run: |
@@ -79,4 +79,4 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash

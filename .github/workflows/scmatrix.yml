@@ -102,7 +102,7 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
 
   runner_b:
     if: github.event.inputs.TotalJobCount >= '2'
@@ -145,7 +145,7 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
 
   runner_c:
     if: github.event.inputs.TotalJobCount >= '3'
@@ -188,7 +188,7 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
 
   runner_d:
     if: github.event.inputs.TotalJobCount >= '4'
@@ -231,7 +231,7 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
 
   runner_e:
     if: github.event.inputs.TotalJobCount == '5'
@@ -274,4 +274,4 @@ jobs:
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -fsSL "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
