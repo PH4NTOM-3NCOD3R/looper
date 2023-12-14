@@ -126,12 +126,12 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Prepare tools
+      - name: Setup Rclone for Later Use
+        uses: rokibhasansagar/custom_workflows/setup_rclone@main
         env:
           RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+      - name: Prepare tools
         run: |
-          # Prepare Rclone
-          curl -fsSL "https://is.gd/rclonesetup4fr3aky" | bash
           # Prepare Downloader
           python3 -m pip install -U pip
           python3 -m pip install mangadex-downloader[optional]

@@ -61,10 +61,9 @@ jobs:
 
       - name: Setup Rclone for Later Use
         if: github.event.inputs.SetupRclone == 'true'
+        uses: rokibhasansagar/custom_workflows/setup_rclone@main
         env:
           RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
-        run: |
-          curl -sL --retry 5 --retry-connrefused "https://is.gd/rclonesetup4fr3aky" | bash
 
       - name: Run Script
         run: |
@@ -76,7 +75,11 @@ jobs:
             done
           fi
           unset v w 2>/dev/null || true
+          if grep -q "\?" <<<"${ScriptURL}"; then
+            export ParamEnvs="${ScriptURL##*\?}"
+            export AddedEnvs=(env ${ParamEnvs//&/ })
+          fi
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${executorPrefix:-} ${AddedEnvs[@]:-} bash

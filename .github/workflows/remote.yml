@@ -57,6 +57,11 @@ jobs:
         env:
           PAT: ${{ secrets.GH_TOKEN }}
 
+      - name: Setup Rclone for Later Use
+        uses: rokibhasansagar/custom_workflows/setup_rclone@main
+        env:
+          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
@@ -72,9 +77,12 @@ jobs:
           fi
           unset v w 2>/dev/null || true
           if [[ -n ${ScriptURL} && ${ScriptURL} != "-" ]]; then
-            mkdir -p ~/data && cd ~/data
-            curl -sL "${ScriptURL}" >~/data/script.sh
-            source ~/data/script.sh
+            mkdir -p ~/base && cd ~/base
+            if grep -q "\?" <<<"${ScriptURL}"; then
+              export ParamEnvs="${ScriptURL##*\?}"
+              export AddedEnvs=(env ${ParamEnvs//&/ })
+            fi
+            curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${AddedEnvs[@]:-} bash
           fi 2>/dev/null || true
 
       - name: NGROK Session
