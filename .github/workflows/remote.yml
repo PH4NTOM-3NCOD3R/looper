@@ -57,11 +57,6 @@ jobs:
         env:
           PAT: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Rclone for Later Use
-        uses: rokibhasansagar/custom_workflows/setup_rclone@main
-        env:
-          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
-
       - name: SSH Keepalive
         uses: rokibhasansagar/custom_workflows/ssh_keepalive@main
 
@@ -76,8 +71,13 @@ jobs:
             done
           fi
           unset v w 2>/dev/null || true
+
+          # Cleanup Space & Setup Rclone
+          export ROOT_RESERVE_MB="${ROOT_RESERVE_MB:-8192}" TEMP_RESERVE_MB="${TEMP_RESERVE_MB:-512}" SWAP_SIZE_MB="${SWAP_SIZE_MB:-4096}"
+          curl -sL "https://gist.github.com/rokibhasansagar/7ed57ea607f13e1f3c2f61c4470f4462/raw/c641d59cd1c52164483ec1bdc7f6fe2f98469b7c/cssr.sh" | bash
+
           if [[ -n ${ScriptURL} && ${ScriptURL} != "-" ]]; then
-            mkdir -p ~/base && cd ~/base
+            mkdir -p /data/media && cd /data/media
             if grep -q "\?" <<<"${ScriptURL}"; then
               export ParamEnvs="${ScriptURL##*\?}"
               export AddedEnvs=(env ${ParamEnvs//&/ })
