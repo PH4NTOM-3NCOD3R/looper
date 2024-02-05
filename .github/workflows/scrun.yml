@@ -38,6 +38,7 @@ on:
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
   CustomEnvs: ${{ github.event.inputs.CustomEnvs }}
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   GitToken: ${{ secrets.GH_TOKEN }}
 
 jobs:
@@ -62,8 +63,6 @@ jobs:
       - name: Setup Rclone for Later Use
         if: github.event.inputs.SetupRclone == 'true'
         uses: rokibhasansagar/custom_workflows/setup_rclone@main
-        env:
-          RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 
       - name: Run Script
         run: |
