@@ -161,4 +161,3 @@ jobs:
           export xRange=$(sed 's/\+/ /g' <<<"${jobrange}")
           sed -i 's/__JOBRANGE__/'"${xRange}"'/g' ./img2avif.converter.sh
           source ./img2avif.converter.sh
-          rm ./img2avif.*.sh
