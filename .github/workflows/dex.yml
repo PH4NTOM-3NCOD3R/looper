@@ -70,10 +70,13 @@ jobs:
         id: set-params
         run: |
           # Generate MangaName
-          MangaNameX=$(curl -sL "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}' | sed 's/&#39;/'\''/g')
+          MangaNameX=$(curl -sL --retry 8 --retry-connrefused --retry-delay 2 "${MangadexURL}" | grep 'property="og:title"' | awk -F'content="' '{print $2}' | awk -F' - MangaDex"' '{print $1}' | sed 's/&#39;/'\''/g')
           MangaNameY="${MangaNameX//[\'\,\!\?\~]/}"
           MangaNameY="${MangaNameY//[^[:alnum:]]/.}"
           export MangaName=$(sed 's/\.\.\././g;s/\.\././g;s/\.$//g' <<<"${MangaNameY}")
+          if [[ -z ${MangaName} ]]; then
+            echo -e "Fatal Error! MangaName Variable is Empty." && exit 1
+          fi
           echo "MangaNameX=${MangaNameX}" >> $GITHUB_OUTPUT
           echo "MangaNameY=${MangaNameY}" >> $GITHUB_OUTPUT
           echo "MangaName=${MangaName}" >> $GITHUB_OUTPUT
@@ -102,6 +105,7 @@ jobs:
 
   dexloader:
     name: Mangadex Downloader
+    if: ( !cancelled() || success() )
     runs-on: ubuntu-22.04
     needs: prepare
 
