@@ -7,6 +7,15 @@ on:
         description: "Script URL to Run"
         required: true
         type: string
+      RunnerMachine:
+        description: "Runner Machine"
+        required: false
+        default: "ubuntu-22.04"
+        type: choice
+        options:
+        - ubuntu-24.04
+        - ubuntu-22.04
+        - ubuntu-20.04
       TotalJobCount:
         description: "Maximum Jobs to Run in Matrix"
         required: true
@@ -20,11 +29,6 @@ on:
         - "5"
       RunAsRoot:
         description: "Run As Root?"
-        type: boolean
-        default: false
-        required: false
-      CleanWS:
-        description: "Clean Workspace with slimhub_actions"
         type: boolean
         default: false
         required: false
@@ -64,7 +68,7 @@ jobs:
   runner_a:
     if: github.event.inputs.TotalJobCount >= '1'
     name: Script Runner 1
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
@@ -79,9 +83,6 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Use slimhub_actions
-        if: github.event.inputs.CleanWS == 'true'
-        uses: rokibhasansagar/slimhub_actions@main
       - name: Run Script
         run: |
           if [[ ${Job1CustomVars} != '' ]]; then
@@ -107,7 +108,7 @@ jobs:
   runner_b:
     if: github.event.inputs.TotalJobCount >= '2'
     name: Script Runner 2
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
@@ -122,9 +123,6 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Use slimhub_actions
-        if: github.event.inputs.CleanWS == 'true'
-        uses: rokibhasansagar/slimhub_actions@main
       - name: Run Script
         run: |
           if [[ ${Job2CustomVars} != '' ]]; then
@@ -150,7 +148,7 @@ jobs:
   runner_c:
     if: github.event.inputs.TotalJobCount >= '3'
     name: Script Runner 3
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
@@ -165,9 +163,6 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Use slimhub_actions
-        if: github.event.inputs.CleanWS == 'true'
-        uses: rokibhasansagar/slimhub_actions@main
       - name: Run Script
         run: |
           if [[ ${Job3CustomVars} != '' ]]; then
@@ -193,7 +188,7 @@ jobs:
   runner_d:
     if: github.event.inputs.TotalJobCount >= '4'
     name: Script Runner 4
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
@@ -208,9 +203,6 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Use slimhub_actions
-        if: github.event.inputs.CleanWS == 'true'
-        uses: rokibhasansagar/slimhub_actions@main
       - name: Run Script
         run: |
           if [[ ${Job4CustomVars} != '' ]]; then
@@ -236,7 +228,7 @@ jobs:
   runner_e:
     if: github.event.inputs.TotalJobCount == '5'
     name: Script Runner 5
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
       CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
       Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
@@ -251,9 +243,6 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Use slimhub_actions
-        if: github.event.inputs.CleanWS == 'true'
-        uses: rokibhasansagar/slimhub_actions@main
       - name: Run Script
         run: |
           if [[ ${Job5CustomVars} != '' ]]; then

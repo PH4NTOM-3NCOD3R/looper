@@ -5,10 +5,11 @@ on:
     inputs:
       RunnerMachine:
         description: "Runner Machine"
-        required: true
+        required: false
         default: "ubuntu-22.04"
         type: choice
         options:
+        - ubuntu-24.04
         - ubuntu-22.04
         - ubuntu-20.04
       ScriptURL:
