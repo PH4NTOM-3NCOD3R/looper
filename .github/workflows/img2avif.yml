@@ -20,6 +20,7 @@ on:
         - "3"
         - "4"
         - "5"
+        - "7"
         default: "2"
       ChapterRange:
         description: "RegEx Range of Chapters -OR- all"
@@ -76,7 +77,7 @@ env:
 jobs:
   prepare:
     name: Prepare img2avif Matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       chWidth: ${{ github.event.inputs.chWidth }}
       ChapterRange: ${{ github.event.inputs.ChapterRange }}
