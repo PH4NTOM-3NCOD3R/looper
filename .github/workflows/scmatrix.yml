@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ScriptURL:
-        description: "Script URL to Run"
+        description: "Script URL (?param1=val1&param2=val2&... Supported)"
         required: true
         type: string
       RunnerMachine:
@@ -16,222 +16,113 @@ on:
         - ubuntu-24.04
         - ubuntu-22.04
         - ubuntu-20.04
+        - windows-2022
+        - windows-2019
+        - macos-14
+        - macos-13
+        - macos-12
       TotalJobCount:
         description: "Maximum Jobs to Run in Matrix"
         required: true
-        default: "5"
+        default: "2"
         type: choice
         options:
-        - "1"
         - "2"
         - "3"
         - "4"
         - "5"
       RunAsRoot:
-        description: "Run As Root?"
+        description: "Run As Root? (sudo $>command ...)"
         type: boolean
         default: false
         required: false
       CommonJobCustomVars:
-        description: "Common Custom Vars for All Jobs (pipe-separated, url-encoded)"
+        description: "Common Custom Vars for All Jobs (pipe-delimited, url-encoded)"
         required: false
         type: string
       Job1CustomVars:
-        description: "Custom Vars for Job #1"
+        description: "Custom Vars for Job 1/A (space-delimited)"
         required: false
+        default: "-"
         type: string
       Job2CustomVars:
-        description: "Custom Vars for Job #2"
+        description: "Custom Vars for Job 2/B (space-delimited)"
         required: false
+        default: "-"
         type: string
       Job3CustomVars:
-        description: "Custom Vars for Job #3"
+        description: "Custom Vars for Job 3/C (space-delimited)"
         required: false
+        default: "-"
         type: string
       Job4CustomVars:
-        description: "Custom Vars for Job #4"
+        description: "Custom Vars for Job 4/D (space-delimited)"
         required: false
+        default: "-"
         type: string
       Job5CustomVars:
-        description: "Custom Vars for Job #5"
+        description: "Custom Vars for Job 5/E (space-delimited)"
         required: false
+        default: "-"
         type: string
+
+defaults:
+  run:
+    shell: bash
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
   RunAsRoot: ${{ github.event.inputs.RunAsRoot }}
-  TotalJobCount: ${{ github.event.inputs.TotalJobCount }}
+  CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
+  Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
+  Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
+  Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
+  Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
+  Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   GitToken: ${{ secrets.GH_TOKEN }}
 
 jobs:
-  runner_a:
-    if: github.event.inputs.TotalJobCount >= '1'
-    name: Script Runner 1
-    runs-on: ${{ github.event.inputs.RunnerMachine }}
-    env:
-      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
-      Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: "main"
-      - name: Set Git Configs & Secrets
-        uses: rokibhasansagar/custom_workflows/git_config@main
-        with:
-          credential: "yes"
-          git_cookies: "no"
-        env:
-          PAT: ${{ secrets.GH_TOKEN }}
-      - name: Run Script
-        run: |
-          if [[ ${Job1CustomVars} != '' ]]; then
-            for i in $(sed 's/\s/\n/g' <<<"${Job1CustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          if [[ ${CommonJobCustomVars} != '' ]]; then
-            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          unset v w 2>/dev/null || true
-          if [[ ${RunAsRoot} == true ]]; then
-            export executorPrefix="sudo"
-          fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
 
-  runner_b:
-    if: github.event.inputs.TotalJobCount >= '2'
-    name: Script Runner 2
-    runs-on: ${{ github.event.inputs.RunnerMachine }}
-    env:
-      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
-      Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: "main"
-      - name: Set Git Configs & Secrets
-        uses: rokibhasansagar/custom_workflows/git_config@main
-        with:
-          credential: "yes"
-          git_cookies: "no"
-        env:
-          PAT: ${{ secrets.GH_TOKEN }}
-      - name: Run Script
-        run: |
-          if [[ ${Job2CustomVars} != '' ]]; then
-            for i in $(sed 's/\s/\n/g' <<<"${Job2CustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          if [[ ${CommonJobCustomVars} != '' ]]; then
-            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          unset v w 2>/dev/null || true
-          if [[ ${RunAsRoot} == true ]]; then
-            export executorPrefix="sudo"
-          fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
+  matrix_builder:
+    name: "Matrix Builder"
+    runs-on: ubuntu-24.04
 
-  runner_c:
-    if: github.event.inputs.TotalJobCount >= '3'
-    name: Script Runner 3
-    runs-on: ${{ github.event.inputs.RunnerMachine }}
     env:
-      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
-      Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: "main"
-      - name: Set Git Configs & Secrets
-        uses: rokibhasansagar/custom_workflows/git_config@main
-        with:
-          credential: "yes"
-          git_cookies: "no"
-        env:
-          PAT: ${{ secrets.GH_TOKEN }}
-      - name: Run Script
-        run: |
-          if [[ ${Job3CustomVars} != '' ]]; then
-            for i in $(sed 's/\s/\n/g' <<<"${Job3CustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          if [[ ${CommonJobCustomVars} != '' ]]; then
-            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          unset v w 2>/dev/null || true
-          if [[ ${RunAsRoot} == true ]]; then
-            export executorPrefix="sudo"
-          fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
+      TotalJobCount: ${{ github.event.inputs.TotalJobCount }}
 
-  runner_d:
-    if: github.event.inputs.TotalJobCount >= '4'
-    name: Script Runner 4
-    runs-on: ${{ github.event.inputs.RunnerMachine }}
-    env:
-      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
-      Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
+    outputs:
+      matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: "main"
-      - name: Set Git Configs & Secrets
-        uses: rokibhasansagar/custom_workflows/git_config@main
-        with:
-          credential: "yes"
-          git_cookies: "no"
-        env:
-          PAT: ${{ secrets.GH_TOKEN }}
-      - name: Run Script
+      - name: "Generate Matrix JSON"
+        id: set-params
         run: |
-          if [[ ${Job4CustomVars} != '' ]]; then
-            for i in $(sed 's/\s/\n/g' <<<"${Job4CustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          if [[ ${CommonJobCustomVars} != '' ]]; then
-            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
-          unset v w 2>/dev/null || true
-          if [[ ${RunAsRoot} == true ]]; then
-            export executorPrefix="sudo"
-          fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
+          case ${TotalJobCount} in
+            2) export jobs=(A B) ;;
+            3) export jobs=(A B C) ;;
+            4) export jobs=(A B C D) ;;
+            5) export jobs=(A B C D E) ;;
+          esac
+          export matrix=[$(for i in "${jobs[@]}"; do printf \""%s\"\n" "${i}"; done | paste -sd, -)]
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
+          echo -e "[i] Generated Matrix: ${matrix}"
 
-  runner_e:
-    if: github.event.inputs.TotalJobCount == '5'
-    name: Script Runner 5
+  matrix_runner:
+    name: "Job Runner"
+    if: ( !cancelled() || success() )
     runs-on: ${{ github.event.inputs.RunnerMachine }}
+    needs: matrix_builder
+
+    strategy:
+      fail-fast: false
+      matrix:
+        JobID: ${{fromJson(needs.matrix_builder.outputs.matrix)}}
     env:
-      CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
-      Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
+      JobID: ${{ matrix.JobID }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -245,22 +136,45 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Run Script
         run: |
-          if [[ ${Job5CustomVars} != '' ]]; then
-            for i in $(sed 's/\s/\n/g' <<<"${Job5CustomVars}"); do
-              v=$(awk -F'=' '{print $1}' <<<"${i}")
-              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
-            done
-          fi
+          # First, export CommonJobCustomVars
           if [[ ${CommonJobCustomVars} != '' ]]; then
+            echo -e "[i] Common Custom Vars:"
             for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
+              echo "  $v=$w"; export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
+          # Export JobXCustomVars
+          case "${JobID}" in
+            A) export JobCustomVars="${Job1CustomVars}" ;;
+            B) export JobCustomVars="${Job2CustomVars}" ;;
+            C) export JobCustomVars="${Job3CustomVars}" ;;
+            D) export JobCustomVars="${Job4CustomVars}" ;;
+            E) export JobCustomVars="${Job5CustomVars}" ;;
+          esac
+          if [[ ${JobCustomVars} != '-' ]]; then
+            echo -e "[i] Job Specific Custom Vars:"
+            for i in $(sed 's/\s/\n/g' <<<"${JobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo "  $v=$w"; export $v="$w"
+            done
+          fi
+          unset v w 2>/dev/null || true
+          # If ScriptURL has ?param1=val1&param2=val2&... postfix
+          if grep -q "\?" <<<"${ScriptURL}"; then
+            echo -e "[i] Positional Custom Vars:"
+            export ParamEnvs="${ScriptURL##*\?}"
+            export AddedEnvs=(env ${ParamEnvs//&/ })
+            echo "  ${AddedEnvs[@]:-}"
+          fi
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | ${executorPrefix:-} bash
+          (
+            echo; set -x;
+            curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${executorPrefix:-} ${AddedEnvs[@]:-} bash
+          )
+

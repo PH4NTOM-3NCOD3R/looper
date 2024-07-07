@@ -23,9 +23,10 @@ on:
         - "7"
         default: "2"
       ChapterRange:
-        description: "RegEx Range of Chapters -OR- all"
+        description: "RegEx Range of Chapters, OR all"
         required: true
         type: string
+        default: "all"
       QScale:
         description: "AOMEnc QScale"
         required: true
@@ -52,12 +53,12 @@ on:
         - "1-w"
         - "1-1"
         - "1-x"
-        default: "1-1"
+        default: "1-0"
       TilingThreshold:
         description: "Tiling Threshold, 416<x<512<y<1024"
         required: true
         type: number
-        default: 512
+        default: 576
       SkipSmallPics:
         description: "Skip Smaller Pics, x<(2*TilingThreshold)?"
         required: true

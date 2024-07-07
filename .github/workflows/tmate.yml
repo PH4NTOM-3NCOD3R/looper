@@ -1,0 +1,63 @@
+name: TMate Session
+
+on:
+  workflow_dispatch:
+    inputs:
+      RunnerMachine:
+        description: "Runner OS/Machine"
+        required: false
+        type: choice
+        options:
+        - ubuntu-24.04
+        - ubuntu-22.04
+        - ubuntu-20.04
+        - windows-2022
+        - windows-2019
+        - macos-14
+        - macos-13
+        - macos-12
+        default: ubuntu-22.04
+      ScriptURL:
+        description: "Script URL to Run before SSH"
+        required: false
+        default: ""
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  debug:
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
+
+    env:
+      ScriptURL: ${{ github.event.inputs.ScriptURL }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "main"
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: PreSSH Script Runner
+        continue-on-error: true
+        if: env.ScriptURL != ''
+        run: |
+          if grep -q "\?" <<<"${ScriptURL}"; then
+            export ParamEnvs="${ScriptURL##*\?}"
+            export AddedEnvs=(env ${ParamEnvs//&/ })
+          fi
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${AddedEnvs[@]:-} bash
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+

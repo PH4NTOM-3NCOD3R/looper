@@ -1,4 +1,4 @@
-name: Mangadex CI
+name: MangadexDL CI
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       ChapterRange:
-        description: "Range of Chapters"
+        description: "Range of Chapters, <start>-<end>"
         required: false
         type: string
       ScanlatorGroup:
@@ -16,7 +16,7 @@ on:
         required: false
         type: string
       GenRaw:
-        description: "Generate Raw (optimum)"
+        description: "Generate HQ Raw (optimum)"
         required: false
         type: boolean
         default: true
@@ -26,17 +26,7 @@ on:
         type: boolean
         default: false
       GenRawVol:
-        description: "Generate Raw Volume"
-        required: false
-        type: boolean
-        default: false
-      GenPDF:
-        description: "Generate PDF"
-        required: false
-        type: boolean
-        default: false
-      GenPDFVol:
-        description: "Generate PDF Volume"
+        description: "Generate Raw Volume (HQ + Compressed)"
         required: false
         type: boolean
         default: false
@@ -49,13 +39,11 @@ env:
   GenRaw: ${{ github.event.inputs.GenRaw }}
   GenRawComp: ${{ github.event.inputs.GenRawComp }}
   GenRawVol: ${{ github.event.inputs.GenRawVol }}
-  GenPDF: ${{ github.event.inputs.GenPDF }}
-  GenPDFVol: ${{ github.event.inputs.GenPDFVol }}
 
 jobs:
   prepare:
     name: Prepare Dex Matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     outputs:
       MangaName: ${{ steps.set-params.outputs.MangaName }}
@@ -66,7 +54,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: "main"
-      - name: Create EncMatrix
+      - name: Create MDx Matrix
         id: set-params
         run: |
           # Generate MangaName
@@ -91,14 +79,6 @@ jobs:
           if [[ ${GenRawVol} == 'true' ]]; then
             [[ ${input_matrix} != "" ]] && export input_matrix+=","
             export input_matrix+="{\"format\":\"raw-volume\",\"compressed\":\"true\"},{\"format\":\"raw-volume\",\"compressed\":\"false\"}"
-          fi
-          if [[ ${GenPDF} == 'true' ]]; then
-            [[ ${input_matrix} != "" ]] && export input_matrix+=","
-            export input_matrix+="{\"format\":\"pdf\",\"compressed\":\"true\"}"
-          fi
-          if [[ ${GenPDFVol} == 'true' ]]; then
-            [[ ${input_matrix} != "" ]] && export input_matrix+=","
-            export input_matrix+="{\"format\":\"pdf-volume\",\"compressed\":\"true\"}"
           fi
           export matrix={\"include\":[${input_matrix}]}
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
@@ -136,10 +116,12 @@ jobs:
           RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
       - name: Prepare tools
         run: |
-          # Prepare Downloader
+          echo "::group:: [#] Prepare Downloader"
           python3 -m pip install -U pip
           python3 -m pip install mangadex-downloader[optional]
-          mangadex-dl --update 2>/dev/null || true
+          ( mangadex-downloader --update 2>/dev/null || true )
+          echo "::endgroup::"
+          mangadex-downloader --help || true
       - name: Manga Downloader Task
         run: |
           # Prepare Vars
@@ -148,11 +130,10 @@ jobs:
           else
             export GroupOpts="--no-group-name"
           fi
-          if [[ ${compressed} == 'false' ]]; then
-            export ImageQuality="High" ImgQOpts=""
-          elif [[ ${compressed} == 'true' ]]; then
-            export ImageQuality="Compressed" ImgQOpts="--use-compressed-image"
-          fi
+          case "${compressed}" in
+            "false") export ImageQuality="High" ImgQOpts="" ;;
+            "true") export ImageQuality="Compressed" ImgQOpts="--use-compressed-image" ;;
+          esac
           echo "ImageQuality=${ImageQuality}" >>${GITHUB_ENV}
           if [[ ${ChapterRange} != "" ]]; then
             export ChapOpts="--start-chapter ${ChapterRange%-*} --end-chapter ${ChapterRange#*-}"
@@ -165,42 +146,40 @@ jobs:
           mangaLoader() {
             mangadex-downloader "${MangadexURL}" --force-https --language "en" --no-track --no-oneshot-chapter --progress-bar-layout "none" --cover "original" ${ImgQOpts} ${ChapOpts:-} ${GroupOpts} --save-as ${format} --use-chapter-title "$@"
           }
-          mangaLoader 2>&1 | tee -a /tmp/mangaLoader.log
+          mangaLoader 2>&1 | tee /tmp/mangaLoader.log
           if [[ $(tail -n20 /tmp/mangaLoader.log | grep -i "Download finished") ]]; then
             echo -e "[i] Download Operation Successfull."
           else
             sleep 2s && echo -e "\nRETRYING..."
-            rm /tmp/mangaLoader.log
-            mangaLoader --log-level "DEBUG" --replace 2>&1 | tee -a /tmp/mangaLoader.log
+            mangaLoader --log-level "DEBUG" --replace 2>&1 | tee /tmp/mangaLoader.log
           fi
           cd "${MangaNameX}" 2>/dev/null || { cd "${MangaNameX:0:1}"* 2>/dev/null || cd ${MangaNameX%% *}*; }
           mv -f * ~/data/${MangaName}/ 2>/dev/null || true
           cd ..
           echo "::endgroup::"
-          if [[ ${format} == "raw"* ]]; then
-            echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
-            cd ~/data/${MangaName}/
-            rm *.db *.json 2>/dev/null || true
-            printf "Total Size of the Images is - %s\n\n" "$(du -sh . | awk '{print $1}')"
-            for i in *; do
-              if [[ -d "${i}" ]]; then
-                pushd "${i}" &>/dev/null
-                ( tar -I'zstd -9 --long -T2' -cf ../"${i}".tzst * && sleep 0.1s; )
-                echo -e "Compressed Images into ${i}.tzst"
-                popd &>/dev/null
-                rm -rf "${i}"
-              fi
-            done
-            echo "::endgroup::"
-          fi
+      - name: Manga Package Task
+        run: |
+          echo "::group:: ∆ Pack Raw Images into zstd-compressed tar archives"
+          cd ~/data/${MangaName}/
+          rm *.db *.json 2>/dev/null || true
+          printf "Total Size of the Images is - %s\n\n" "$(du -sh . | awk '{print $1}')"
+          for i in *; do
+            if [[ -d "${i}" ]]; then
+              pushd "${i}" &>/dev/null
+              ( tar -I'zstd -9 --long -T2' -cf ../"${i}".tzst * && sleep 0.02s; )
+              echo -e "Compressed Images into ${i}.tzst"
+              popd &>/dev/null
+              rm -rf "${i}"
+            fi
+          done
+          echo "::endgroup::"
+          printf "\n[i] Total Size of the Upload will be == %s\n\n" "$(du -sh . | awk '{print $1}')"
+          printf "Contents of the Manga...\n\n"
+          tree -h -L 2 ~/data/${MangaName}/
+          echo "::endgroup::"
       - name: Manga Upload Task
         run: |
           cd ~/data/
-          echo "::group:: [i] Debug Details"
-          printf "Total Size of the Upload will be %s\n\n" "$(du -sh ${MangaName} | awk '{print $1}')"
-          printf "Contents of the Manga...\n\n"
-          tree -h -L 2 ${MangaName}/
-          echo "::endgroup::"
           echo "::group:: [+] Manga Upload Task"
           printf "Please wait a few minutes till everything gets uploaded...\n"
           rclone --quiet copy ${MangaName}/ "ms365:Public/${MDx_Location}/${ImageQuality}_Quality/${MangaName}/" --retries 6 --retries-sleep 5s --tpslimit 120 --transfers 4 --fast-list && printf "Upload Done\n"

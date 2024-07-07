@@ -3,6 +3,10 @@ name: Script Runner CI
 on:
   workflow_dispatch:
     inputs:
+      ScriptURL:
+        description: "Script URL (?param1=val1&param2=val2&... Supported)"
+        required: true
+        type: string
       RunnerMachine:
         description: "Runner Machine"
         required: false
@@ -12,14 +16,19 @@ on:
         - ubuntu-24.04
         - ubuntu-22.04
         - ubuntu-20.04
-      ScriptURL:
-        description: "Script URL to Run"
-        required: true
-        type: string
+        - windows-2022
+        - windows-2019
+        - macos-14
+        - macos-13
+        - macos-12
       RunAsRoot:
-        description: "Run As Root?"
+        description: "Run As Root? (sudo $>command ...)"
         type: boolean
         default: false
+        required: false
+      CommonJobCustomVars:
+        description: "Custom Vars (pipe-delimited, url-encoded)"
+        type: string
         required: false
       CleanWS:
         description: "Clean Workspace with slimhub_actions"
@@ -31,14 +40,14 @@ on:
         type: boolean
         default: false
         required: false
-      CustomEnvs:
-        description: "Custom Env Vars (pipe-separated), x=a|y=2"
-        type: string
-        required: false
+
+defaults:
+  run:
+    shell: bash
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
-  CustomEnvs: ${{ github.event.inputs.CustomEnvs }}
+  CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   GitToken: ${{ secrets.GH_TOKEN }}
 
@@ -64,22 +73,31 @@ jobs:
       - name: Setup Rclone for Later Use
         if: github.event.inputs.SetupRclone == 'true'
         uses: rokibhasansagar/custom_workflows/setup_rclone@main
+        # env:
+        #   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 
       - name: Run Script
         run: |
-          if [[ ${CustomEnvs} != '' ]]; then
-            for i in $(sed 's/|/\n/g' <<<"${CustomEnvs}"); do
+          if [[ ${CommonJobCustomVars} != '' ]]; then
+            echo -e "[i] Common Custom Vars:"
+            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
-              echo $v="$w" && export $v="$w"
+              echo "  $v=$w"; export $v="$w"
             done
           fi
           unset v w 2>/dev/null || true
           if grep -q "\?" <<<"${ScriptURL}"; then
+            echo -e "[i] Positional Custom Vars:"
             export ParamEnvs="${ScriptURL##*\?}"
             export AddedEnvs=(env ${ParamEnvs//&/ })
+            echo "  ${AddedEnvs[@]:-}"
           fi
           if [[ ${RunAsRoot} == true ]]; then
             export executorPrefix="sudo"
           fi
-          curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${executorPrefix:-} ${AddedEnvs[@]:-} bash
+          (
+            echo; set -x;
+            curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${executorPrefix:-} ${AddedEnvs[@]:-} bash
+          )
+
