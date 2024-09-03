@@ -145,8 +145,8 @@ jobs:
           # Get GIST latest Revision number
           export latestRevision=$(curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/" | grep "/img2avif\.converter\.sh" | awk -F'/raw/' '{print $2}' | awk -F'/' '{print $1}')
           echo -e "[i] Using ${latestRevision} as latestRevision"
-          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/xToolsetup.sh" -O
-          source ./xToolsetup.sh && rm ./xToolsetup.sh
+          curl -sL "https://gist.github.com/rokibhasansagar/${BaseScript_Hash}/raw/${latestRevision}/zToolsetup.sh" -O
+          source ./zToolsetup.sh && rm ./zToolsetup.sh
           echo "::endgroup::"
           mkdir -p ~/data && cd ~/data
           if [[ ${Output_Directory} == "" ]]; then
