@@ -1,4 +1,4 @@
-name: IMG2AVIF CI
+name: WEBTOON2AVIF CI
 
 on:
   workflow_dispatch:
@@ -16,11 +16,11 @@ on:
         required: true
         type: choice
         options:
+        - "1"
         - "2"
         - "3"
         - "4"
         - "5"
-        - "7"
         default: "2"
       ChapterRange:
         description: "RegEx Range of Chapters, OR all"
@@ -31,16 +31,15 @@ on:
         description: "AOMEnc QScale"
         required: true
         type: number
-        default: 42
+        default: 39
       Range:
-        description: "YUV Color Range, JPEG/Full/Limited"
+        description: "YUV Color Range, JPEG/Full"
         required: true
         type: choice
         options:
         - j
         - f
-        - l
-        default: l
+        default: j
       Optimization:
         description: "Sharpness (0|1) + Denoise(0|1|wavelet|wavelet+aom)"
         required: true
@@ -58,17 +57,12 @@ on:
         description: "Tiling Threshold, 416<x<512<y<1024"
         required: true
         type: number
-        default: 576
+        default: 512
       SkipSmallPics:
         description: "Skip Smaller Pics, x<(2*TilingThreshold)?"
         required: true
         type: boolean
         default: true
-      LongStrip:
-        description: "Is The Manga Longstrip/Webtoon? (OBSOLETE)"
-        required: false
-        type: boolean
-        default: false
 
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
@@ -110,7 +104,7 @@ jobs:
           echo -e "[i] Generated Matrix: ${matrix}"
 
   img2avif:
-    name: IMG2AVIF Converter
+    name: WEBTOON2AVIF Converter
     runs-on: ubuntu-22.04
     needs: prepare
 
@@ -124,7 +118,7 @@ jobs:
       Optimization: ${{ github.event.inputs.Optimization }}
       TilingThreshold: ${{ github.event.inputs.TilingThreshold }}
       SkipSmallPics: ${{ github.event.inputs.SkipSmallPics }}
-      LongStrip: ${{ github.event.inputs.LongStrip }}
+      LongStrip: true
 
     steps:
       - uses: actions/checkout@v4
@@ -163,3 +157,4 @@ jobs:
           export xRange=$(sed 's/\+/ /g' <<<"${jobrange}")
           sed -i 's/__JOBRANGE__/'"${xRange}"'/g' ./img2avif.converter.sh
           source ./img2avif.converter.sh
+
