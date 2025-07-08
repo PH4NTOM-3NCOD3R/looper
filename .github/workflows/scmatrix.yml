@@ -10,17 +10,16 @@ on:
       RunnerMachine:
         description: "Runner Machine"
         required: false
-        default: "ubuntu-22.04"
+        default: "ubuntu-24.04"
         type: choice
         options:
         - ubuntu-24.04
         - ubuntu-22.04
-        - ubuntu-20.04
+        - windows-2025
         - windows-2022
-        - windows-2019
+        - macos-15
         - macos-14
         - macos-13
-        - macos-12
       TotalJobCount:
         description: "Maximum Jobs to Run in Matrix"
         required: true
@@ -37,7 +36,7 @@ on:
         default: false
         required: false
       CommonJobCustomVars:
-        description: "Common Custom Vars for All Jobs (pipe-delimited, url-encoded)"
+        description: "Common Custom Vars (pipe-delimited, url-encoded)"
         required: false
         type: string
       Job1CustomVars:

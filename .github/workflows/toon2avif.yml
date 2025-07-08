@@ -1,4 +1,4 @@
-name: WEBTOON2AVIF CI
+name: TOON2AVIF CI
 
 on:
   workflow_dispatch:
@@ -71,7 +71,7 @@ env:
 
 jobs:
   prepare:
-    name: Prepare img2avif Matrix
+    name: Prepare toon2avif Matrix
     runs-on: ubuntu-24.04
     env:
       chWidth: ${{ github.event.inputs.chWidth }}
@@ -103,9 +103,9 @@ jobs:
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
           echo -e "[i] Generated Matrix: ${matrix}"
 
-  img2avif:
-    name: WEBTOON2AVIF Converter
-    runs-on: ubuntu-22.04
+  toon2avif:
+    name: TOON2AVIF Converter
+    runs-on: ubuntu-24.04
     needs: prepare
 
     strategy:
