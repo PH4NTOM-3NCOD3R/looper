@@ -1,4 +1,5 @@
 name: mangaScraper CI
+run-name: mangaScraper with ${{ inputs.baseScriptLoader }}
 
 on:
   workflow_dispatch:
@@ -41,7 +42,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    name: ${{ env.baseScriptLoader }}
+    name: ${{ inputs.baseScriptLoader }}
 
     steps:
       - uses: actions/checkout@v4
