@@ -1,0 +1,77 @@
+name: mangaScraper CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseScriptLoader:
+        description: "baseScript Loader"
+        required: true
+        type: choice
+        options:
+        - asuraScans
+        - flameScraper
+        - mangaFire
+      JobCustomVars:
+        description: "Custom Vars (pipe-delimited, url-encoded)"
+        type: string
+        required: false
+      LATEST:
+        description: "Download Latest Chapters"
+        type: boolean
+        default: true
+        required: false
+      reDL:
+        description: "Force Download"
+        type: boolean
+        default: false
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  baseScriptLoader: ${{ github.event.inputs.baseScriptLoader }}
+  JobCustomVars: ${{ github.event.inputs.JobCustomVars }}
+  LATEST: ${{ github.event.inputs.LATEST }}
+  reDL: ${{ github.event.inputs.reDL }}
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+  GitToken: ${{ secrets.GH_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+      - name: Run Scraper - ${{ env.baseScriptLoader }}
+        run: |
+          export scriptBase="https://gist.github.com/rokibhasansagar"
+          case ${baseScriptLoader} in
+            asuraScans)    export scriptSource="dedfce204d245f6ea34d9abf1a1feb9e" ;;
+            flameScraper)  export scriptSource="efea87c29d03d67d57b35d1429c39807" ;;
+            mangaFire)     export scriptSource="a69a21842a238d8fea4dc1c28fdb7d44" ;;
+          esac
+          export scriptRef=$(git ls-remote -q "${scriptBase}/${scriptSource}" HEAD | awk '{print $1}')
+          if [[ ${JobCustomVars} != '' ]]; then
+            echo -e "[i] Custom Vars:"
+            for i in $(sed 's/|/\n/g' <<<"${JobCustomVars}"); do
+              v=$(awk -F'=' '{print $1}' <<<"${i}")
+              w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
+              echo "  $v=$w"; export $v="$w"
+            done
+          fi
+          unset v w 2>/dev/null || true
+          (
+            echo; set -x;
+            curl -sL --retry 5 --retry-connrefused "${scriptBase}/${scriptSource}/raw/${scriptRef}/00script.sh" | bash
+          )
+
