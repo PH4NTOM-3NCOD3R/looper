@@ -41,6 +41,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    name: ${{ env.baseScriptLoader }}
 
     steps:
       - uses: actions/checkout@v4
@@ -69,9 +70,12 @@ jobs:
               echo "  $v=$w"; export $v="$w"
             done
           fi
+          echo "  LATEST=${LATEST}"
+          echo "  reDL=${reDL}"
           unset v w 2>/dev/null || true
-          (
-            echo; set -x;
-            curl -sL --retry 5 --retry-connrefused "${scriptBase}/${scriptSource}/raw/${scriptRef}/00script.sh" | bash
-          )
+          export ScriptURL="${scriptBase}/${scriptSource}/raw/${scriptRef}/00script.sh"
+          echo "§ ScriptURL=${ScriptURL}"
+          echo
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | bash
+          echo
 
