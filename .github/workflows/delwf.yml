@@ -3,10 +3,15 @@ name: Delete Workflow Logs
 on:
   workflow_dispatch:
     inputs:
-      days_old:
-        description: "The Last X Days' Logs To Keep"
+      runs_older_than:
+        description: "Last X Days' Logs To Keep"
         default: "3"
         required: false
+  schedule:
+    - cron: "30 2 * * MON"  # https://crontab.guru
+
+env:
+  SCHEDULED_RUNS_OLDER_THAN: "5"
 
 jobs:
   cleaner:
@@ -14,7 +19,7 @@ jobs:
     permissions:
       actions: write
     steps:
-      - uses: igorjs/gh-actions-clean-workflow@v5
+      - uses: igorjs/gh-actions-clean-workflow@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          days_old: ${{ github.event.inputs.days_old }}
+          runs_older_than: ${{ github.event.inputs.runs_older_than || env.SCHEDULED_RUNS_OLDER_THAN }} # optional

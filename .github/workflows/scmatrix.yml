@@ -1,4 +1,5 @@
 name: Script Matrix CI
+run-name: Script Matrix
 
 on:
   workflow_dispatch:
@@ -21,7 +22,7 @@ on:
         - macos-14
         - macos-13
       TotalJobCount:
-        description: "Maximum Jobs to Run in Matrix"
+        description: "Number of Jobs to Run in Matrix"
         required: true
         default: "2"
         type: choice
@@ -30,13 +31,9 @@ on:
         - "3"
         - "4"
         - "5"
-      RunAsRoot:
-        description: "Run As Root? (sudo $>command ...)"
-        type: boolean
-        default: false
-        required: false
+        - "6"
       CommonJobCustomVars:
-        description: "Common Custom Vars (pipe-delimited, url-encoded)"
+        description: "Common Custom Vars (pipe-delimited, url-encoded, root≈true‽)"
         required: false
         type: string
       Job1CustomVars:
@@ -64,6 +61,11 @@ on:
         required: false
         default: "-"
         type: string
+      Job6CustomVars:
+        description: "Custom Vars for Job 6/F (space-delimited)"
+        required: false
+        default: "-"
+        type: string
 
 defaults:
   run:
@@ -71,13 +73,13 @@ defaults:
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
-  RunAsRoot: ${{ github.event.inputs.RunAsRoot }}
   CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
   Job1CustomVars: ${{ github.event.inputs.Job1CustomVars }}
   Job2CustomVars: ${{ github.event.inputs.Job2CustomVars }}
   Job3CustomVars: ${{ github.event.inputs.Job3CustomVars }}
   Job4CustomVars: ${{ github.event.inputs.Job4CustomVars }}
   Job5CustomVars: ${{ github.event.inputs.Job5CustomVars }}
+  Job6CustomVars: ${{ github.event.inputs.Job6CustomVars }}
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   GitToken: ${{ secrets.GH_TOKEN }}
 
@@ -104,6 +106,7 @@ jobs:
             3) export jobs=(A B C) ;;
             4) export jobs=(A B C D) ;;
             5) export jobs=(A B C D E) ;;
+            6) export jobs=(A B C D E F) ;;
           esac
           export matrix=[$(for i in "${jobs[@]}"; do printf \""%s\"\n" "${i}"; done | paste -sd, -)]
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
@@ -133,7 +136,7 @@ jobs:
           git_cookies: "no"
         env:
           PAT: ${{ secrets.GH_TOKEN }}
-      - name: Run Script
+      - name: Run Script [ ${{ env.CommonJobCustomVars }} ]
         run: |
           # First, export CommonJobCustomVars
           if [[ ${CommonJobCustomVars} != '' ]]; then
@@ -152,6 +155,7 @@ jobs:
             C) export JobCustomVars="${Job3CustomVars}" ;;
             D) export JobCustomVars="${Job4CustomVars}" ;;
             E) export JobCustomVars="${Job5CustomVars}" ;;
+            F) export JobCustomVars="${Job6CustomVars}" ;;
           esac
           if [[ ${JobCustomVars} != '-' ]]; then
             echo -e "[i] Job Specific Custom Vars:"
@@ -169,7 +173,7 @@ jobs:
             export AddedEnvs=(env ${ParamEnvs//&/ })
             echo "  ${AddedEnvs[@]:-}"
           fi
-          if [[ ${RunAsRoot} == true ]]; then
+          if [[ ${root} == true ]]; then
             export executorPrefix="sudo"
           fi
           (

@@ -1,4 +1,5 @@
 name: Script Runner CI
+run-name: Script Runner
 
 on:
   workflow_dispatch:
@@ -25,7 +26,7 @@ on:
         type: boolean
         default: false
         required: false
-      CommonJobCustomVars:
+      JobCustomVars:
         description: "Custom Vars (pipe-delimited, url-encoded)"
         type: string
         required: false
@@ -46,7 +47,7 @@ defaults:
 
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
-  CommonJobCustomVars: ${{ github.event.inputs.CommonJobCustomVars }}
+  JobCustomVars: ${{ github.event.inputs.JobCustomVars }}
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
   GitToken: ${{ secrets.GH_TOKEN }}
 
@@ -75,11 +76,11 @@ jobs:
         # env:
         #   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
 
-      - name: Run Script
+      - name: Run Script [ ${{ env.JobCustomVars }} ]
         run: |
-          if [[ ${CommonJobCustomVars} != '' ]]; then
-            echo -e "[i] Common Custom Vars:"
-            for i in $(sed 's/|/\n/g' <<<"${CommonJobCustomVars}"); do
+          if [[ ${JobCustomVars} != '' ]]; then
+            echo -e "[i] Custom Vars:"
+            for i in $(sed 's/|/\n/g' <<<"${JobCustomVars}"); do
               v=$(awk -F'=' '{print $1}' <<<"${i}")
               w=$(cut -d'=' -f2- <<<"${i}" | sed 's#"##g')
               echo "  $v=$w"; export $v="$w"

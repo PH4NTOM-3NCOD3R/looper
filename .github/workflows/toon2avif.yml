@@ -1,4 +1,5 @@
 name: TOON2AVIF CI
+run-name: T2Avif - ${{ inputs.Input_Directory }} - ${{ inputs.ChapterRange }}
 
 on:
   workflow_dispatch:
@@ -104,7 +105,7 @@ jobs:
           echo -e "[i] Generated Matrix: ${matrix}"
 
   toon2avif:
-    name: TOON2AVIF Converter
+    name: T2Avif - ${{ inputs.Input_Directory }}
     runs-on: ubuntu-24.04
     needs: prepare
 
@@ -133,7 +134,7 @@ jobs:
           PAT: ${{ secrets.GH_TOKEN }}
       - name: Workstation
         env:
-          Output_Directory: ${{ github.event.inputs.Output_Directory }}
+          Output_Directory: ${{ github.event.inputs.Output_Directory || github.event.inputs.Input_Directory }}
         run: |
           echo "::group::[i] Setup tools"
           # Get GIST latest Revision number

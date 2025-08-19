@@ -1,4 +1,4 @@
-name: EncToolZ Updater CI
+name: EncToolZ Updater
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
