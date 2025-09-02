@@ -111,7 +111,7 @@ jobs:
           echo -e "[i] Generated Matrix: ${matrix}"
 
   img2avif:
-    name: I2Avif - ${{ inputs.Input_Directory }}
+    # name: ${{ inputs.Input_Directory }} - ${{ env.jobrange }} Q${{ env.Qscale }}
     runs-on: ubuntu-24.04
     needs: prepare
 
