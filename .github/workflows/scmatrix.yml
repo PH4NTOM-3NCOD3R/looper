@@ -95,9 +95,10 @@ jobs:
     outputs:
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: "main"
+          ref: main
+          show-progress: false
       - name: "Generate Matrix JSON"
         id: set-params
         run: |
@@ -128,7 +129,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: main
+          show-progress: false
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
         with:

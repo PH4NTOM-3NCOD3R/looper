@@ -9,13 +9,14 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: 'main'
+          ref: main
+          show-progress: false
       - name: GitHub Auth
         uses: rokibhasansagar/custom_workflows/git_config@main
         env:

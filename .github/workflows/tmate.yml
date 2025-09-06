@@ -1,4 +1,5 @@
 name: TMate Session
+run-name: TMate Sesssion on ${{ inputs.RunnerMachine }}
 
 on:
   workflow_dispatch:
@@ -36,7 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: main
+          show-progress: false
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
         with:
@@ -54,7 +56,7 @@ jobs:
           fi
           curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" | ${AddedEnvs[@]:-} bash
 
-      - uses: webfactory/ssh-agent@v0.9.0
+      - uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Setup tmate session

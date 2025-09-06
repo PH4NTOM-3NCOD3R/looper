@@ -57,6 +57,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          show-progress: false
 
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main

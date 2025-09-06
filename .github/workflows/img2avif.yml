@@ -78,7 +78,7 @@ env:
 
 jobs:
   prepare:
-    name: Prepare img2avif Matrix
+    name: MatrixGen | ${{ inputs.ChapterRange }}
     runs-on: ubuntu-24.04
     env:
       chWidth: ${{ github.event.inputs.chWidth }}
@@ -87,9 +87,10 @@ jobs:
     outputs:
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: "main"
+          ref: main
+          show-progress: false
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
         with:
@@ -128,9 +129,10 @@ jobs:
       LongStrip: ${{ github.event.inputs.LongStrip }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: "main"
+          ref: main
+          show-progress: false
       - name: Set Git Configs & Secrets
         uses: rokibhasansagar/custom_workflows/git_config@main
         with:
