@@ -1,5 +1,5 @@
 name: IMG2AVIF CI
-run-name: I2Avif - ${{ inputs.Input_Directory }} - ${{ inputs.ChapterRange }}
+run-name: I2Avif - ${{ inputs.ChapterRange }} - ${{ inputs.Input_Directory }}
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       Output_Directory:
-        description: "MDx Output Directory (Optional)"
+        description: "MDx Output Dir (Optional)"
         required: false
         type: string
       chWidth:
@@ -32,9 +32,9 @@ on:
         description: "AOMEnc QScale"
         required: true
         type: number
-        default: 42
+        default: 45
       Range:
-        description: "YUV Color Range, JPEG/Full/Limited"
+        description: "YUV Color Range, JPEG>Full>Limited"
         required: true
         type: choice
         options:
