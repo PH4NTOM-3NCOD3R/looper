@@ -22,6 +22,7 @@ on:
         - "3"
         - "4"
         - "5"
+        - "7"
         default: "2"
       ChapterRange:
         description: "RegEx Range of Chapters, OR all"
