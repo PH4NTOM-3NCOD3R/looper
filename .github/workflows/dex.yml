@@ -51,7 +51,7 @@ jobs:
       MangaNameY: ${{ steps.set-params.outputs.MangaNameY }}
       matrix: ${{ steps.set-params.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: "main"
       - name: Create MDx Matrix
@@ -100,7 +100,7 @@ jobs:
       compressed: ${{ matrix.compressed }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: "main"
       - name: Set Git Configs & Secrets
