@@ -1,0 +1,131 @@
+name: xScript Matrix CI
+run-name: xScript Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      ScriptURL:
+        description: Script URL (?a=1&b=2)
+        required: true
+        type: string
+      RunnerMachine:
+        description: Runner
+        type: choice
+        default: ubuntu-24.04
+        options:
+          - ubuntu-24.04
+          - ubuntu-22.04
+          - ubuntu-24.04-arm
+          - ubuntu-22.04-arm
+          - ubuntu-slim
+          - windows-2025
+          - windows-2022
+          - windows-11-arm
+          - macos-26
+          - macos-15-intel
+          - macos-15
+          - macos-14
+      TotalJobCount:
+        description: Number of jobs (2–10)
+        required: true
+        default: "2"
+        type: choice
+        options: ["2","3","4","5","6","7","8","9","10"]
+      CommonVars: { description: "Pipe-delimited Common KEY=VAL", type: string }
+      JobAVars: { description: "Job A vars", type: string }
+      JobBVars: { description: "Job B vars", type: string }
+      JobCVars: { description: "Job C vars", type: string }
+      JobDVars: { description: "Job D vars", type: string }
+      JobEVars: { description: "Job E vars", type: string }
+      JobFVars: { description: "Job F vars", type: string }
+      JobGVars: { description: "Job G vars", type: string }
+      JobHVars: { description: "Job H vars", type: string }
+      JobIVars: { description: "Job I vars", type: string }
+      JobJVars: { description: "Job J vars", type: string }
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ScriptURL: ${{ github.event.inputs.ScriptURL }}
+  CommonVars: ${{ github.event.inputs.CommonVars }}
+  JobAVars: ${{ github.event.inputs.JobAVars }}
+  JobBVars: ${{ github.event.inputs.JobBVars }}
+  JobCVars: ${{ github.event.inputs.JobCVars }}
+  JobDVars: ${{ github.event.inputs.JobDVars }}
+  JobEVars: ${{ github.event.inputs.JobEVars }}
+  JobFVars: ${{ github.event.inputs.JobFVars }}
+  JobGVars: ${{ github.event.inputs.JobGVars }}
+  JobHVars: ${{ github.event.inputs.JobHVars }}
+  JobIVars: ${{ github.event.inputs.JobIVars }}
+  JobJVars: ${{ github.event.inputs.JobJVars }}
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+  GitToken: ${{ secrets.GH_TOKEN }}
+
+jobs:
+  matrix_builder:
+    runs-on: ubuntu-slim
+    outputs:
+      matrix: ${{ steps.mk.outputs.matrix }}
+    steps:
+      - id: mk
+        run: |
+          arr=(A B C D E F G H I J)
+          max=${{ github.event.inputs.TotalJobCount }}
+          slice=( "${arr[@]:0:max}" )
+          j=$(printf ',"%s"' "${slice[@]}"); j=${j:1}
+          matrix="[${j}]"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  matrix_runner:
+    needs: matrix_builder
+    runs-on: ${{ github.event.inputs.RunnerMachine }}
+    strategy:
+      fail-fast: false
+      matrix:
+        JobID: ${{ fromJson(needs.matrix_builder.outputs.matrix) }}
+
+    env:
+      JobID: ${{ matrix.JobID }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: main, show-progress: false }
+
+      - name: Git Configs
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: Run Script
+        run: |
+          set -eo pipefail
+
+          if [[ -n "$CommonVars" ]]; then
+            while IFS='=' read -r k v; do
+              [[ -z "$k" ]] && continue
+              export "$k"="${v//\"/}"
+            done < <(sed 's/|/\n/g' <<<"$CommonVars")
+          fi
+
+          dyn="Job${JobID}Vars"
+          JobCustomVars="${!dyn}"
+
+          if [[ -n "$JobCustomVars" ]]; then
+            while IFS='=' read -r k v; do
+              [[ -z "$k" ]] && continue
+              export "$k"="${v//\"/}"
+            done < <(sed 's/|/\n/g' <<<"$JobCustomVars")
+          fi
+
+          if [[ "$ScriptURL" == *\?* ]]; then
+            ParamEnvs="${ScriptURL#*\?}"
+            AddedEnvs=(env ${ParamEnvs//&/ })
+          fi
+
+          [[ "$root" == true ]] && executorPrefix="sudo"
+
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" \
+            | ${executorPrefix:-} ${AddedEnvs[@]:-} bash
+
