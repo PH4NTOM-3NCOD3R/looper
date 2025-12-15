@@ -1,12 +1,43 @@
 name: TOON2AVIF CI
-run-name: T2Avif - ${{ inputs.ChapterRange }} - ${{ inputs.Input_Directory }}
+run-name: T2Avif - ${{ inputs.ChapterRange }} @${{ inputs.QScale }} - ${{ inputs.Input_Webtoon || inputs.Input_Directory }}
 
 on:
   workflow_dispatch:
     inputs:
+      Input_Webtoon:
+        description: "MDx Input (Predefined)"
+        required: false
+        type: choice
+        options:
+        - I.Killed.an.Academy.Player.AsuraScans
+        - Infinite.Mage.AsuraScans
+        - Overgeared.AsuraScans
+        - Return.of.the.Disaster.Class.Hero.AsuraScans
+        - Revenge.of.the.Sword.Clans.Hound.AsuraScans
+        - Solo.Max.Level.Newbie.AsuraScans
+        - The.Knight.King.Who.Returned.with.a.God.AsuraScans
+        - The.Last.Adventurer.AsuraScans
+        - The.Max.Level.Players.100th.Regression.AsuraScans
+        - The.World.After.The.End.AsuraScans
+        - Leveling.With.The.Gods.FlameScans
+        - Omniscient.Readers.Viewpoint.FlameScans
+        - Solo.Leveling.Ragnarok.FlameScans
+        - Solo.Necromancy.FlameScans
+        - Star.Embracing.Swordmaster.FlameScans
+        - Swordmasters.Youngest.Son.FlameScans
+        - The.Academys.Genius.Swordsman.FlameScans
+        - The.Indomitable.Martial.King.FlameScans
+        - The.Regressed.Youngest.Son.of.the.Duke.is.an.Assassin.FlameScans
+        - Childhood.Friend.of.the.Zenith.MangaFire
+        - Not-Sew-Wicked.Stepmom.MangaFire
+        - Pick.Me.Up.MangaFire
+        - Player.Who.Returned.10000.Years.Later.MangaFire
+        - Rankers.Return.MangaFire
+        - ""
+        default: ""
       Input_Directory:
         description: "MDx Input Directory"
-        required: true
+        required: false
         type: string
       Output_Directory:
         description: "MDx Output Dir (Optional)"
@@ -14,7 +45,7 @@ on:
         type: string
       chWidth:
         description: "Chapter Per Job"
-        required: true
+        required: false
         type: choice
         options:
         - "1"
@@ -69,12 +100,12 @@ on:
 env:
   BaseScript_Hash: "33dccb6d2b4418a5062b894c0d1c67b4"
   RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
-  Input_Directory: ${{ github.event.inputs.Input_Directory }}
+  Input_Directory: ${{ github.event.inputs.Input_Webtoon || github.event.inputs.Input_Directory }}
 
 jobs:
   prepare:
     name: MatrixGen | ${{ inputs.ChapterRange }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     env:
       chWidth: ${{ github.event.inputs.chWidth }}
       ChapterRange: ${{ github.event.inputs.ChapterRange }}
