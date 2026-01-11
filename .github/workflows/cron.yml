@@ -1,0 +1,33 @@
+name: CronJob CI
+
+on:
+  schedule:
+    - cron: "20 2 * * *"
+  workflow_dispatch:
+
+env:
+  selfAddr: "https://gist.github.com/rokibhasansagar/e2e3777692757355066e20fb59aee0db"
+  selfScript: "cronJobs.sh"
+
+jobs:
+
+  build:
+    runs-on: ubuntu-slim
+
+    steps:
+
+      - uses: actions/checkout@v6
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: Run Cron Script
+        run: |
+          export selfRef=$(git ls-remote -q "${selfAddr}" HEAD | awk '{print $1}')
+          curl -sL --retry 8 --retry-connrefused "${selfAddr}/raw/${selfRef}/${selfScript}" | bash
+
