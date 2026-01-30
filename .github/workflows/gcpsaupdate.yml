@@ -105,7 +105,7 @@ jobs:
 
           echo "Starting script with flags: $FLAGS"
 
-          python3 sa_gen.py \
+          python3 -u sa_gen.py \
             -p "${{ inputs.gcp_project || secrets.GCP_PROJECT }}" \
             -g "${{ inputs.group_email || secrets.GROUP_EMAIL }}" \
             -b "${{ inputs.sa_base_name || 'phantombot' }}" \
