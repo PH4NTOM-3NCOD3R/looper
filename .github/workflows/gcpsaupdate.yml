@@ -31,11 +31,6 @@ on:
         required: true
         default: '1'
         type: string
-      parallel_jobs:
-        description: 'Parallel Jobs'
-        required: true
-        default: '4'
-        type: string
       keys_dir:
         description: 'Directory for generated keys'
         required: true
@@ -116,7 +111,6 @@ jobs:
             -b "${{ inputs.sa_base_name || 'phantombot' }}" \
             -n "${{ inputs.sa_count || '99' }}" \
             -s "${{ inputs.sa_start_num || '1' }}" \
-            -j "${{ inputs.parallel_jobs || '4' }}" \
             -k "${{ inputs.keys_dir || 'sa_keys' }}" \
             $FLAGS
 
