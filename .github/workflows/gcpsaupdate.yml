@@ -1,0 +1,134 @@
+name: GCloud SA Key Refresher
+
+on:
+  schedule:
+    # Run at 02:30 AM on the 3rd day of every month
+    - cron: "30 2 3 * *"
+  workflow_dispatch:
+    inputs:
+      gcp_project:
+        description: 'GCP Project ID'
+        required: true
+        default: 'thephantomdrive'
+        type: string
+      group_email:
+        description: 'Google Group Email'
+        required: true
+        default: 'thephantomdrive@googlegroups.com'
+        type: string
+      sa_base_name:
+        description: 'Service Account Base Name'
+        required: true
+        default: 'phantombot'
+        type: string
+      sa_count:
+        description: 'Number of SAs to process'
+        required: true
+        default: '99'
+        type: string
+      sa_start_num:
+        description: 'Starting SA Number'
+        required: true
+        default: '1'
+        type: string
+      parallel_jobs:
+        description: 'Parallel Jobs'
+        required: true
+        default: '4'
+        type: string
+      keys_dir:
+        description: 'Directory for generated keys'
+        required: true
+        default: 'sa_keys'
+        type: string
+      rotate_keys:
+        description: 'Rotate Keys (Delete old keys)'
+        required: true
+        default: true
+        type: boolean
+      dry_run:
+        description: 'Dry Run (Check logs without deleting)'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  rotate:
+    runs-on: ubuntu-slim
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # Authenticate using the Service Account Key stored in Secrets
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ inputs.gcp_project || secrets.GCP_PROJECT }}
+
+      - name: Get sa_gen.py Script
+        run: |
+          export saGenAddr="https://gist.github.com/rokibhasansagar/2a1b5d3ebc7bd116459ba434b9d26446"
+          export selfRef=$(git ls-remote -q "${saGenAddr}" HEAD | awk '{print $1}')
+          export selfScript="z93regenerate.py"
+          curl -sL "${saGenAddr}/raw/${selfRef}/${selfScript}" -o sa_gen.py
+          python3 sa_gen.py -h
+
+      - name: Run SA Generation & Rotation
+        run: |
+          # Define logic for boolean flags (inputs are strings 'true'/'false' in bash)
+          FLAGS=""
+
+          # Check if triggered by Cron or Manual
+          IS_CRON="${{ github.event_name == 'schedule' }}"
+
+          if [[ "$IS_CRON" == "true" ]]; then
+             # Default Cron Behavior: Rotate=True, DryRun=False
+             ROTATE="true"
+             DRY="false"
+          else
+             # Manual Behavior: Use inputs
+             ROTATE="${{ inputs.rotate_keys }}"
+             DRY="${{ inputs.dry_run }}"
+          fi
+
+          if [[ "$ROTATE" == "true" ]]; then FLAGS="$FLAGS -r"; fi
+          if [[ "$DRY" == "true" ]]; then FLAGS="$FLAGS -d"; fi
+
+          echo "Starting script with flags: $FLAGS"
+
+          python3 sa_gen.py \
+            -p "${{ inputs.gcp_project || secrets.GCP_PROJECT }}" \
+            -g "${{ inputs.group_email || secrets.GROUP_EMAIL }}" \
+            -b "${{ inputs.sa_base_name || 'phantombot' }}" \
+            -n "${{ inputs.sa_count || '99' }}" \
+            -s "${{ inputs.sa_start_num || '1' }}" \
+            -j "${{ inputs.parallel_jobs || '4' }}" \
+            -k "${{ inputs.keys_dir || 'sa_keys' }}" \
+            $FLAGS
+
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sa_results
+          path: |
+            ${{ inputs.keys_dir || 'sa_keys' }}/members.csv
+            ${{ inputs.keys_dir || 'sa_keys' }}/sa_emails.txt
+          compression-level: 9
+          retention-days: 5
+
+
