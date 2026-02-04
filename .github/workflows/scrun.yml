@@ -1,6 +1,9 @@
 name: Script Runner CI
 run-name: Script Runner
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
