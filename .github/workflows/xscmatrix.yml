@@ -32,16 +32,19 @@ on:
         type: choice
         options: ["2","3","4","5","6","7","8","9","10"]
       CommonVars: { description: "Pipe-delimited Common KEY=VAL", type: string }
-      JobAVars: { description: "Job A vars", type: string }
-      JobBVars: { description: "Job B vars", type: string }
-      JobCVars: { description: "Job C vars", type: string }
-      JobDVars: { description: "Job D vars", type: string }
-      JobEVars: { description: "Job E vars", type: string }
-      JobFVars: { description: "Job F vars", type: string }
-      JobGVars: { description: "Job G vars", type: string }
-      JobHVars: { description: "Job H vars", type: string }
-      JobIVars: { description: "Job I vars", type: string }
-      JobJVars: { description: "Job J vars", type: string }
+      DistributedVar:
+        description: "Distributed array variable (e.g. z={01..10} or z=({01..10}))"
+        type: string
+      JobAVars: { description: "Job A vars as KEY=VAL", type: string }
+      JobBVars: { description: "Job B vars as KEY=VAL", type: string }
+      JobCVars: { description: "Job C vars as KEY=VAL", type: string }
+      JobDVars: { description: "Job D vars as KEY=VAL", type: string }
+      JobEVars: { description: "Job E vars as KEY=VAL", type: string }
+      JobFVars: { description: "Job F vars as KEY=VAL", type: string }
+      JobGVars: { description: "Job G vars as KEY=VAL", type: string }
+      JobHVars: { description: "Job H vars as KEY=VAL", type: string }
+      JobIVars: { description: "Job I vars as KEY=VAL", type: string }
+      JobJVars: { description: "Job J vars as KEY=VAL", type: string }
 
 defaults:
   run:
@@ -50,6 +53,7 @@ defaults:
 env:
   ScriptURL: ${{ github.event.inputs.ScriptURL }}
   CommonVars: ${{ github.event.inputs.CommonVars }}
+  DistributedVar: ${{ github.event.inputs.DistributedVar }}
   JobAVars: ${{ github.event.inputs.JobAVars }}
   JobBVars: ${{ github.event.inputs.JobBVars }}
   JobCVars: ${{ github.event.inputs.JobCVars }}
@@ -68,15 +72,45 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       matrix: ${{ steps.mk.outputs.matrix }}
+      dist_name: ${{ steps.mk.outputs.dist_name }}
     steps:
       - id: mk
+        name: Matrix Builder
         run: |
           arr=(A B C D E F G H I J)
           max=${{ github.event.inputs.TotalJobCount }}
-          slice=( "${arr[@]:0:max}" )
-          j=$(printf ',"%s"' "${slice[@]}"); j=${j:1}
-          matrix="[${j}]"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          dist_input="$DistributedVar"
+
+          # 1. Safely evaluate the requested array expansion
+          var_name=""
+          var_vals=()
+          if [[ -n "$dist_input" && "$dist_input" == *"="* ]]; then
+            var_name="${dist_input%%=*}"
+            exp="${dist_input#*=}"
+
+            # Catch both input types: z={01..10} and z=({01..10})
+            if [[ "$exp" == \(*\)* ]]; then
+              eval "var_vals=$exp"
+            else
+              eval "var_vals=( $exp )"
+            fi
+          fi
+
+          # Pass the dynamic variable name to the runners
+          echo "dist_name=$var_name" >> "$GITHUB_OUTPUT"
+
+          # 2. Build JSON array of objects to map JobID and Array Value natively
+          matrix_json="["
+          for (( i=0; i<max; i++ )); do
+            job_id="${arr[$i]}"
+            val="${var_vals[$i]:-}" # Inherits empty string if array runs out of values
+
+            if [[ $i -gt 0 ]]; then matrix_json+=","; fi
+            matrix_json+='{"JobID":"'"$job_id"'", "DistVal":"'"$val"'"}'
+          done
+          matrix_json+="]"
+
+          echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
 
   matrix_runner:
     needs: matrix_builder
@@ -84,10 +118,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        JobID: ${{ fromJson(needs.matrix_builder.outputs.matrix) }}
+        # 3. Using `include` forces the runner to absorb the JSON keys as direct matrix variables
+        include: ${{ fromJson(needs.matrix_builder.outputs.matrix) }}
 
     env:
       JobID: ${{ matrix.JobID }}
+      DistVal: ${{ matrix.DistVal }}
+      DistName: ${{ needs.matrix_builder.outputs.dist_name }}
 
     steps:
       - uses: actions/checkout@v6
@@ -102,10 +139,32 @@ jobs:
         run: |
           set -eo pipefail
 
+          echo "=== Environment Variable Trace ==="
+
+          # Helper function to print and mask sensitive vars
+          print_trace() {
+            local prefix="$1"
+            local key="$2"
+            local val="$3"
+            # Case-insensitive check for common sensitive keywords
+            if [[ "${key^^}" =~ (TOKEN|PASSWORD|SECRET|KEY|CREDENTIAL|AUTH) ]]; then
+              echo "[$prefix] $key=***(masked)***"
+            else
+              echo "[$prefix] $key=$val"
+            fi
+          }
+
+          # 4. Export the distributed variable if it was provided
+          if [[ -n "$DistName" && -n "$DistVal" ]]; then
+            export "$DistName"="$DistVal"
+            print_trace "Distributed" "$DistName" "$DistVal"
+          fi
+
           if [[ -n "$CommonVars" ]]; then
             while IFS='=' read -r k v; do
               [[ -z "$k" ]] && continue
               export "$k"="${v//\"/}"
+              print_trace "Common" "$k" "${!k}"
             done < <(sed 's/|/\n/g' <<<"$CommonVars")
           fi
 
@@ -116,16 +175,21 @@ jobs:
             while IFS='=' read -r k v; do
               [[ -z "$k" ]] && continue
               export "$k"="${v//\"/}"
+              print_trace "Job ${JobID}" "$k" "${!k}"
             done < <(sed 's/|/\n/g' <<<"$JobCustomVars")
           fi
 
           if [[ "$ScriptURL" == *\?* ]]; then
             ParamEnvs="${ScriptURL#*\?}"
             AddedEnvs=(env ${ParamEnvs//&/ })
+            echo "[ParamEnvs] ${ParamEnvs//&/ }"
           fi
+
+          echo "=================================="
 
           [[ "$root" == true ]] && executorPrefix="sudo"
 
+          echo "Executing script from ${ScriptURL%\?*}"
           curl -sL --retry 5 --retry-connrefused "${ScriptURL%\?*}" \
             | ${executorPrefix:-} ${AddedEnvs[@]:-} bash
 
