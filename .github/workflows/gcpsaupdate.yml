@@ -81,6 +81,7 @@ jobs:
           export selfScript="z93regenerate.py"
           curl -sL "${saGenAddr}/raw/${selfRef}/${selfScript}" -o sa_gen.py
           python3 sa_gen.py -h
+          echo && printenv | sort && echo
 
       - name: Run SA Generation & Rotation
         run: |
