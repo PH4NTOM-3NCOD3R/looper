@@ -9,30 +9,42 @@ on:
         required: false
         type: choice
         options:
+        - Childhood.Friend.of.the.Zenith.AsuraScans
+        - Dukedoms.Legendary.Prodigy.AsuraScans
+        - I.Became.the.First.Prince.Legend.of.Swords.Song.AsuraScans
         - I.Killed.an.Academy.Player.AsuraScans
         - Infinite.Mage.AsuraScans
+        - Kidnapped.Dragons.AsuraScans
+        - Leveling.With.The.Gods.FlameScans
+        - Noble.Lady.Reformation.Guide.AsuraScans
+        - Not-Sew-Wicked.Stepmom.MangaFire
+        - Omniscient.Readers.Viewpoint.FlameScans
         - Overgeared.AsuraScans
+        - Pick.Me.Up.Infinite.Gacha.AsuraScans
+        - Player.Who.Returned.10000.Years.Later.AsuraScans
+        - Rankers.Return.MangaFire
+        - Reformation.of.the.Deadbeat.Noble.AsuraScans
+        - Regressor.of.the.Fallen.family.AsuraScans
         - Return.of.the.Disaster.Class.Hero.AsuraScans
         - Revenge.of.the.Sword.Clans.Hound.AsuraScans
-        - Solo.Max.Level.Newbie.AsuraScans
-        - The.Knight.King.Who.Returned.with.a.God.AsuraScans
-        - The.Last.Adventurer.AsuraScans
-        - The.Max.Level.Players.100th.Regression.AsuraScans
-        - The.World.After.The.End.AsuraScans
-        - Leveling.With.The.Gods.FlameScans
-        - Omniscient.Readers.Viewpoint.FlameScans
+        - Sandmancer.of.the.Scorched.Desert.AsuraScans
         - Solo.Leveling.Ragnarok.FlameScans
+        - Solo.Max.Level.Newbie.AsuraScans
         - Solo.Necromancy.FlameScans
         - Star.Embracing.Swordmaster.FlameScans
         - Swordmasters.Youngest.Son.FlameScans
         - The.Academys.Genius.Swordsman.FlameScans
+        - The.Extras.Academy.Survival.Guide.AsuraScans
         - The.Indomitable.Martial.King.FlameScans
+        - The.Knight.King.Who.Returned.with.a.God.AsuraScans
+        - The.Last.Adventurer.AsuraScans
+        - The.Max.Level.Players.100th.Regression.AsuraScans
+        - The.Novels.Extra.FlameScans
         - The.Regressed.Youngest.Son.of.the.Duke.is.an.Assassin.FlameScans
-        - Childhood.Friend.of.the.Zenith.MangaFire
-        - Not-Sew-Wicked.Stepmom.MangaFire
-        - Pick.Me.Up.MangaFire
-        - Player.Who.Returned.10000.Years.Later.MangaFire
-        - Rankers.Return.MangaFire
+        - The.Reincarnated.Assassin.is.a.Genius.Swordsman.AsuraScans
+        - The.Third.Prince.of.the.Fallen.Kingdom.has.Regressed.FlameScans
+        - The.World.After.The.End.AsuraScans
+        - Trash.of.the.Counts.Family.AsuraScans
         - ""
         default: ""
       Input_Directory:
