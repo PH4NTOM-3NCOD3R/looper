@@ -35,7 +35,7 @@ jobs:
       ScriptURL: ${{ github.event.inputs.ScriptURL }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           show-progress: false
