@@ -1,5 +1,5 @@
-name: TMate Session
-run-name: TMate Sesssion on ${{ inputs.RunnerMachine }}
+name: Remote SSH Session
+run-name: Remote Sesssion on ${{ inputs.Technique }} @ ${{ inputs.RunnerMachine }}
 
 on:
   workflow_dispatch:
@@ -9,14 +9,30 @@ on:
         required: false
         type: choice
         options:
+        - ubuntu-26.04
         - ubuntu-24.04
         - ubuntu-22.04
+        - ubuntu-26.04-arm
+        - ubuntu-24.04-arm
+        - ubuntu-22.04-arm
+        - ubuntu-slim
         - windows-2025
         - windows-2022
+        - windows-11-arm
+        - xcode-27
+        - macos-26-intel
+        - macos-26
+        - macos-15-intel
         - macos-15
-        - macos-14
-        - macos-13
         default: ubuntu-24.04
+      Technique:
+        description: "Technique to use for SSH"
+        required: false
+        type: choice
+        options:
+        - tmate
+        - upterm
+        default: tmate
       ScriptURL:
         description: "Script URL to Run before SSH"
         required: false
@@ -60,5 +76,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Setup tmate session
+        if: github.event.inputs.Technique == 'tmate'
         uses: mxschmitt/action-tmate@v3
+
+      - name: Setup upterm session
+        if: github.event.inputs.Technique == 'upterm'
+        uses: owenthereal/action-upterm@v1
 
