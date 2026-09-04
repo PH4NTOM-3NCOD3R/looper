@@ -1,0 +1,54 @@
+name: EncToolZ Updater
+
+on:
+  schedule:
+    # Runs at 01:00 UTC on roughly every 5th day of every month
+    - cron: '0 1 2,7,12,17,22,27 1-12 ?'
+  # Run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Which script should be run?'
+        required: true
+        default: 'update'
+        type: choice
+        options:
+          - update
+          - init
+          - thin
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          show-progress: false
+
+      - name: GitHub Auth
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: Fetch and Run Selected Script
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          if [[ "${{ github.event_name }}" == "schedule" || -z "$ACTION" ]]; then
+            ACTION="update"
+          fi
+          if [[ "$ACTION" == "init" ]]; then
+            SCRIPT_NAME="1.InitEncToolZ"
+          elif [[ "$ACTION" == "thin" ]]; then
+            SCRIPT_NAME="3.ThinEncToolZ"
+          else
+            SCRIPT_NAME="2.UpdateEncToolZ"
+          fi
+
+          echo "::notice::Executing action: ${ACTION} -> ${SCRIPT_NAME}.sh"
+
+          curl -fsSL "https://gist.githubusercontent.com/rokibhasansagar/c63cc8255562949b1a815203c7663747/raw/${SCRIPT_NAME}.sh" | bash
+        env:
+          GitToken: ${{ secrets.GH_TOKEN }}
+
