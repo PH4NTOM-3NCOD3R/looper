@@ -1,0 +1,224 @@
+name: mangaScraper v2
+run-name: >-
+  mangaScraper [${{
+  format('{0}{1}{2}{3}{4}',
+  inputs.asuraScans && 'Asura' || '',
+  inputs.asuraScans && (inputs.flameScraper || inputs.mangaFire) && ', ' || '',
+  inputs.flameScraper && 'Flame' || '',
+  inputs.flameScraper && inputs.mangaFire && ', ' || '',
+  inputs.mangaFire && 'MangaFire' || '')
+  }}]
+
+on:
+  workflow_dispatch:
+    inputs:
+      asuraScans:
+        description: "Run AsuraScans Scraper"
+        type: boolean
+        default: false
+        required: false
+      flameScraper:
+        description: "Run FlameComics Scraper"
+        type: boolean
+        default: false
+        required: false
+      mangaFire:
+        description: "Run MangaFire Scraper (Legacy)"
+        type: boolean
+        default: false
+        required: false
+      JobCustomVars:
+        description: "Custom Vars (pipe-delimited, url-encoded; supports ASURA_ / FLAME_ prefixes)"
+        type: string
+        required: false
+      LATEST:
+        description: "Download Latest Chapters"
+        type: boolean
+        default: true
+        required: false
+      reDL:
+        description: "Force Download"
+        type: boolean
+        default: false
+        required: false
+      debug_upload:
+        description: "Bundle & Upload Debug HTML/JSON Archives as GitHub Artifact"
+        type: boolean
+        default: false
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  SCRAPER_GIST_ID: "e73bf44027c1649df320c7d221c2b3e1"
+  JobCustomVars: ${{ inputs.JobCustomVars }}
+  LATEST: ${{ inputs.LATEST }}
+  reDL: ${{ inputs.reDL }}
+  DEBUG_UPLOAD: ${{ inputs.debug_upload }}
+  DEBUG_DIR: "/tmp/debug_bundles"
+  RCLONE_CONFIG_HASH: ${{ secrets.RCLONE_CONFIG_HASH }}
+  GitToken: ${{ secrets.GH_TOKEN }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-26.04
+    outputs:
+      scrapers: ${{ steps.select.outputs.scrapers }}
+    steps:
+      - name: Validate & Build Scraper Matrix
+        id: select
+        run: |
+          declare -A s=(
+            [asuraScans]=${{ inputs.asuraScans }}
+            [flameScraper]=${{ inputs.flameScraper }}
+            [mangaFire]=${{ inputs.mangaFire }}
+          )
+          t=()
+          for k in "${!s[@]}"; do
+            if [[ ${s[$k]} == true ]]; then t+=("\"$k\""); fi
+          done
+          (( ${#t[@]} )) || { echo "::warning::No scraper selected; select at least one scraper (asuraScans, flameScraper, or mangaFire)."; echo "scrapers=[]" >> "$GITHUB_OUTPUT"; exit 0; }
+          IFS=,; echo "scrapers=[${t[*]}]" | tee -a "$GITHUB_OUTPUT"
+
+  scrape:
+    needs: prepare
+    if: needs.prepare.outputs.scrapers != '' && needs.prepare.outputs.scrapers != '[]'
+    runs-on: ubuntu-26.04
+    name: ${{ matrix.scraper }}
+    strategy:
+      fail-fast: false
+      matrix:
+        scraper: ${{ fromJson(needs.prepare.outputs.scrapers) }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          show-progress: false
+
+      - name: Set Git Configs & Secrets
+        uses: rokibhasansagar/custom_workflows/git_config@main
+        with:
+          credential: "yes"
+          git_cookies: "no"
+        env:
+          PAT: ${{ secrets.GH_TOKEN }}
+
+      - name: Parse & Scope Custom Variables
+        env:
+          TARGET_SCRAPER: ${{ matrix.scraper }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from urllib.parse import unquote
+
+          raw = os.getenv("JobCustomVars", "").strip()
+          target = os.getenv("TARGET_SCRAPER", "")
+          prefix_map = {"asuraScans": "ASURA_", "flameScraper": "FLAME_"}
+          all_prefixes = tuple(prefix_map.values())
+          my_prefix = prefix_map.get(target)
+
+          shared_vars = {}
+          scoped_vars = {}
+
+          for item in raw.split("|"):
+              item = item.strip()
+              if not item or "=" not in item:
+                  continue
+              key, val = item.split("=", 1)
+              key = unquote(key).strip()
+              val = unquote(val).strip().replace('"', "").replace("\r", "").replace("\n", "")
+              if not key:
+                  continue
+
+              if any(key.startswith(p) for p in all_prefixes):
+                  if my_prefix and key.startswith(my_prefix):
+                      stripped = key[len(my_prefix):]
+                      if stripped:
+                          scoped_vars[stripped] = val
+              else:
+                  shared_vars[key] = val
+
+          merged = {**shared_vars, **scoped_vars}
+          if merged:
+              print("[i] Resolved Custom Vars:")
+              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+                  for k, v in merged.items():
+                      print(f"  {k}={v}")
+                      fh.write(f"{k}={v}\n")
+          print(f"  LATEST={merged.get('LATEST', os.getenv('LATEST', ''))}")
+          print(f"  reDL={merged.get('reDL', os.getenv('reDL', ''))}")
+          print(f"  DEBUG_UPLOAD={merged.get('DEBUG_UPLOAD', os.getenv('DEBUG_UPLOAD', ''))}")
+          PY
+
+      - name: Cleanup Storage & Setup Rclone (CSSR)
+        # if: matrix.scraper != 'mangaFire'
+        run: |
+          if [[ ! -f "/data/.maximized.lock" ]]; then
+            export ROOT_RESERVE_MB="${ROOT_RESERVE_MB:-4096}"
+            export TEMP_RESERVE_MB="${TEMP_RESERVE_MB:-256}"
+            export SWAP_SIZE_MB="${SWAP_SIZE_MB:-2048}"
+            export slim="0"
+            export codebase="https://gist.github.com/rokibhasansagar"
+            export _cssr_hash="7ed57ea607f13e1f3c2f61c4470f4462"
+            export _cssr_ref="03017813804c653593943d615b7eb2436e792661"
+            curl -sL --retry 5 --retry-connrefused "${codebase}/${_cssr_hash}/raw/${_cssr_ref}/cssr.sh" | bash
+          fi
+
+      - name: Install Python Scraper Dependencies
+        if: matrix.scraper != 'mangaFire'
+        run: |
+          python3 -m venv /tmp/.scraper-venv
+          /tmp/.scraper-venv/bin/pip install --quiet --upgrade pip
+          /tmp/.scraper-venv/bin/pip install --quiet curl_cffi beautifulsoup4 lxml Pillow
+
+      - name: Fetch Gist & Run ${{ matrix.scraper }}
+        if: matrix.scraper != 'mangaFire'
+        run: |
+          gistBase="https://gist.github.com/rokibhasansagar/${SCRAPER_GIST_ID}"
+          gistRef=$(git ls-remote -q "${gistBase}" HEAD | awk '{print $1}')
+          echo "§ GistRef=${gistRef}"
+
+          workDir="/tmp/scraper_run"
+          mkdir -p "${workDir}"
+
+          case "${{ matrix.scraper }}" in
+            asuraScans)
+              entry="asura_scraper.py"
+              catalog="xCatalog_asura.txt"
+              ;;
+            flameScraper)
+              entry="flame_scraper.py"
+              catalog="xCatalog_flame.txt"
+              ;;
+          esac
+
+          for f in "scraper_core.py" "${entry}" "${catalog}"; do
+            curl -fsSL --retry 8 --retry-connrefused "${gistBase}/raw/${gistRef}/${f}" -o "${workDir}/${f}"
+          done
+
+          /tmp/.scraper-venv/bin/python -u "${workDir}/${entry}"
+
+      - name: Run Legacy MangaFire Scraper
+        if: matrix.scraper == 'mangaFire'
+        run: |
+          export scriptBase="https://gist.github.com/rokibhasansagar"
+          export scriptSource="a69a21842a238d8fea4dc1c28fdb7d44"
+          export scriptRef=$(git ls-remote -q "${scriptBase}/${scriptSource}" HEAD | awk '{print $1}')
+          export ScriptURL="${scriptBase}/${scriptSource}/raw/${scriptRef}/00script.sh"
+          echo "§ ScriptURL=${ScriptURL}"
+          echo
+          curl -sL --retry 5 --retry-connrefused "${ScriptURL}" | bash
+
+      - name: Upload Debug Artifact
+        if: always() && matrix.scraper != 'mangaFire' && env.DEBUG_UPLOAD == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: debug-${{ matrix.scraper }}
+          path: ${{ env.DEBUG_DIR }}
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: ignore
+
