@@ -9,15 +9,22 @@ on:
         required: false
         type: choice
         options:
+        - ""
+        - 30.Years.Since.The.Prologue.AsuraScans
         - Childhood.Friend.of.the.Zenith.AsuraScans
+        - Damn.Reincarnation.AsuraScans
         - Dukedoms.Legendary.Prodigy.AsuraScans
         - I.Became.the.First.Prince.Legend.of.Swords.Song.AsuraScans
         - I.Killed.an.Academy.Player.AsuraScans
         - Infinite.Mage.AsuraScans
         - Kidnapped.Dragons.AsuraScans
         - Leveling.With.The.Gods.FlameScans
+        - My.Girlfriend.Returned.as.a.Dragon.AsuraScans
+        - My.Slain.Dragon.Bride.AsuraScans
+        - Nano.Machine.AsuraScans
         - Noble.Lady.Reformation.Guide.AsuraScans
         - Not-Sew-Wicked.Stepmom.MangaFire
+        - Omniscient.Readers.Viewpoint.AsuraScans
         - Omniscient.Readers.Viewpoint.FlameScans
         - Overgeared.AsuraScans
         - Pick.Me.Up.Infinite.Gacha.AsuraScans
@@ -25,6 +32,8 @@ on:
         - Rankers.Return.MangaFire
         - Reformation.of.the.Deadbeat.Noble.AsuraScans
         - Regressor.of.the.Fallen.family.AsuraScans
+        - Return.of.The.Frozen.Player.AsuraScans
+        - Return.of.the.Apocalypse.Class.Death.Knight.AsuraScans
         - Return.of.the.Disaster.Class.Hero.AsuraScans
         - Revenge.of.the.Sword.Clans.Hound.AsuraScans
         - Sandmancer.of.the.Scorched.Desert.AsuraScans
@@ -33,19 +42,22 @@ on:
         - Solo.Necromancy.FlameScans
         - Star.Embracing.Swordmaster.FlameScans
         - Swordmasters.Youngest.Son.FlameScans
+        - Talent.Swallowing.Magician.AsuraScans
         - The.Academys.Genius.Swordsman.FlameScans
+        - The.Archmages.Restaurant.AsuraScans
         - The.Extras.Academy.Survival.Guide.AsuraScans
         - The.Indomitable.Martial.King.FlameScans
         - The.Knight.King.Who.Returned.with.a.God.AsuraScans
         - The.Last.Adventurer.AsuraScans
         - The.Max.Level.Players.100th.Regression.AsuraScans
         - The.Novels.Extra.FlameScans
+        - The.Player.Hides.His.Past.AsuraScans
         - The.Regressed.Youngest.Son.of.the.Duke.is.an.Assassin.FlameScans
         - The.Reincarnated.Assassin.is.a.Genius.Swordsman.AsuraScans
         - The.Third.Prince.of.the.Fallen.Kingdom.has.Regressed.FlameScans
         - The.World.After.The.End.AsuraScans
         - Trash.of.the.Counts.Family.AsuraScans
-        - ""
+        - Waiting.in.the.Wheat.Field.AsuraScans
         default: ""
       Input_Directory:
         description: "MDx Input Directory"
